@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SSP Innovation Journey · Guatemala</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,900;1,300&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0F0E1A; --surface:#1A1828; --surface2:#221F35; --jade:#4ECCA3;
+  --jade-dim:rgba(78,204,163,0.15); --orange:#FF6B35; --orange-dim:rgba(255,107,53,0.15);
+  --purple:#7C6FCD; --text:#E8E6F0; --muted:#8884A0; --border:rgba(255,255,255,0.08);
+  --card-bg:#1E1C2E;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+.topbar{position:fixed;top:0;left:0;right:0;height:56px;background:rgba(15,14,26,.95);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;z-index:100;}
+.topbar-logo{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:900;color:var(--jade);letter-spacing:-1px;}
+.topbar-logo span{color:var(--orange);}
+.topbar-right{display:flex;align-items:center;gap:.75rem;}
+.topbar-name{font-size:.85rem;color:var(--muted);}
+.btn-reset{background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:.75rem;padding:.3rem .6rem;cursor:pointer;transition:all .2s;}
+.btn-reset:hover{border-color:var(--orange);color:var(--orange);}
+
+.app-layout{display:flex;padding-top:56px;min-height:100vh;}
+
+.sidebar{width:260px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);
+  padding:1.5rem 1rem;position:fixed;top:56px;left:0;bottom:0;overflow-y:auto;}
+.sidebar-title{font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1.25rem;padding-left:.5rem;}
+.stage-item{display:flex;align-items:flex-start;gap:.75rem;padding:.65rem .75rem;border-radius:8px;cursor:pointer;transition:all .15s;margin-bottom:.25rem;}
+.stage-item.active{background:var(--jade-dim);}
+.stage-item.completed{opacity:.7;}
+.stage-item:hover:not(.active){background:rgba(255,255,255,.04);}
+.stage-num{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:600;color:var(--muted);flex-shrink:0;transition:all .2s;}
+.stage-item.active .stage-num{border-color:var(--jade);color:var(--jade);background:var(--jade-dim);}
+.stage-item.completed .stage-num{border-color:var(--jade);background:var(--jade);color:var(--bg);}
+.stage-label{font-size:.8rem;line-height:1.3;color:var(--muted);}
+.stage-item.active .stage-label{color:var(--text);}
+
+.main{margin-left:260px;flex:1;padding:2.5rem 2rem;max-width:820px;}
+.progress-bar{height:3px;background:var(--border);border-radius:2px;margin-bottom:2rem;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--jade),var(--purple));border-radius:2px;transition:width .4s ease;}
+
+.stage-card{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:1.5rem;position:relative;overflow:hidden;}
+.stage-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--jade),var(--purple));}
+.stage-eyebrow{font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--jade);margin-bottom:.5rem;}
+.stage-title{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:600;color:var(--text);margin-bottom:.5rem;line-height:1.2;}
+.stage-prompt{color:var(--muted);font-size:.9rem;line-height:1.6;margin-bottom:1.5rem;}
+
+.field-group{margin-bottom:1.25rem;}
+.field-label{font-size:.75rem;color:var(--jade);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.5rem;display:block;}
+.field-input{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:.85rem 1rem;color:var(--text);font-family:'Inter',sans-serif;font-size:.9rem;outline:none;transition:border-color .2s;resize:none;}
+.field-input:focus{border-color:var(--jade);}
+.field-input::placeholder{color:var(--muted);opacity:.5;}
+
+.photo-zone{border:2px dashed var(--border);border-radius:12px;padding:2rem;text-align:center;margin-bottom:1.25rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.photo-zone:hover{border-color:var(--jade);background:var(--jade-dim);}
+.photo-zone.has-image{border-style:solid;border-color:var(--jade);padding:0;}
+.photo-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:2;}
+.photo-preview{width:100%;max-height:280px;object-fit:contain;border-radius:10px;display:none;}
+.photo-preview.visible{display:block;}
+.photo-placeholder{color:var(--muted);font-size:.9rem;pointer-events:none;}
+.photo-placeholder .icon{font-size:2.5rem;margin-bottom:.5rem;display:block;}
+.photo-zone.has-image .photo-placeholder{display:none;}
+.photo-change{font-size:.72rem;color:var(--jade);margin-top:.35rem;display:none;padding:.5rem;}
+.photo-zone.has-image .photo-change{display:block;}
+
+.btn-ai{width:100%;padding:.9rem;background:linear-gradient(135deg,var(--jade),#38b590);border:none;border-radius:10px;color:var(--bg);font-family:'Inter',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem;margin-bottom:.75rem;}
+.btn-ai:hover{opacity:.9;transform:translateY(-1px);}
+.btn-ai:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.btn-save{background:linear-gradient(135deg,var(--purple),#6058b0);}
+.btn-confirm{background:linear-gradient(135deg,var(--orange),#e55a2a);}
+
+.btn-regenerate{width:100%;padding:.7rem;background:none;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:.85rem;cursor:pointer;transition:all .2s;display:none;margin-bottom:.75rem;}
+.btn-regenerate.visible{display:block;}
+.btn-regenerate:hover{border-color:var(--jade);color:var(--jade);}
+
+.ai-result{display:none;margin-top:1.25rem;}
+.ai-result.visible{display:block;}
+.ai-result-box{background:var(--orange-dim);border:1px solid rgba(255,107,53,.3);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+.ai-result-eyebrow{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--orange);margin-bottom:.75rem;}
+.ai-result-text{font-family:'Fraunces',serif;font-size:1rem;font-weight:300;line-height:1.7;color:var(--text);white-space:pre-wrap;}
+
+.segment-selector{margin-top:1rem;}
+.segment-label{font-size:.75rem;color:var(--jade);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.75rem;display:block;}
+.segment-options{display:flex;flex-direction:column;gap:.5rem;}
+.segment-option{padding:1rem;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s;font-size:.88rem;line-height:1.5;}
+.segment-option:hover{border-color:var(--jade);}
+.segment-option.selected{border-color:var(--jade);background:var(--jade-dim);}
+.segment-option-label{font-size:.7rem;color:var(--orange);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem;font-weight:600;}
+.segment-message{margin-top:.5rem;font-size:.82rem;color:var(--orange);font-style:italic;}
+
+.accionadores-grid{display:flex;flex-direction:column;gap:.6rem;margin-top:1rem;}
+.accionador-item{padding:.9rem 1rem;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s;}
+.accionador-item:hover{border-color:var(--purple);}
+.accionador-item.selected{border-color:var(--jade);background:var(--jade-dim);}
+.accionador-tipo{font-size:.68rem;color:var(--orange);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.2rem;font-weight:600;}
+.accionador-nombre{font-size:.85rem;color:var(--text);font-weight:600;margin-bottom:.2rem;}
+.accionador-insight{font-size:.78rem;color:var(--muted);margin-bottom:.3rem;font-style:italic;}
+.accionador-accion{font-size:.85rem;color:var(--jade);}
+.selection-count{font-size:.78rem;color:var(--muted);margin-top:.75rem;text-align:right;}
+.selection-count span{color:var(--jade);font-weight:600;}
+
+.wow-options{display:flex;flex-direction:column;gap:.75rem;margin-top:1rem;}
+.wow-card{padding:1.25rem;border-radius:12px;border:1.5px solid var(--border);background:var(--surface2);}
+.wow-card.funcional{border-color:rgba(78,204,163,.4);}
+.wow-card.emocional{border-color:rgba(124,111,205,.4);}
+.wow-card.simbolico{border-color:rgba(255,107,53,.4);}
+.wow-type{font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;margin-bottom:.5rem;font-weight:600;}
+.wow-card.funcional .wow-type{color:var(--jade);}
+.wow-card.emocional .wow-type{color:var(--purple);}
+.wow-card.simbolico .wow-type{color:var(--orange);}
+.wow-text{font-size:.9rem;line-height:1.6;color:var(--text);margin-bottom:.5rem;}
+.wow-moment{font-family:'Fraunces',serif;font-style:italic;font-size:.95rem;color:var(--muted);}
+
+.accepted-box{display:none;background:rgba(78,204,163,.06);border:1px solid rgba(78,204,163,.2);border-radius:10px;padding:1rem 1.25rem;margin-top:1rem;}
+.accepted-box.visible{display:block;}
+.accepted-label{font-size:.7rem;color:var(--jade);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.35rem;}
+.accepted-text{font-size:.88rem;color:var(--text);line-height:1.5;white-space:pre-wrap;}
+
+.stage-nav{display:flex;justify-content:space-between;margin-top:1.5rem;}
+.btn-nav{padding:.7rem 1.4rem;border-radius:8px;font-size:.85rem;font-weight:500;cursor:pointer;transition:all .15s;}
+.btn-prev{background:none;border:1px solid var(--border);color:var(--muted);}
+.btn-prev:hover{border-color:var(--muted);color:var(--text);}
+.btn-next{background:var(--jade);border:none;color:var(--bg);font-weight:600;}
+.btn-next:hover{opacity:.85;}
+.btn-next:disabled{opacity:.3;cursor:not-allowed;}
+
+.summary-card{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:1rem;}
+.summary-title{font-family:'Fraunces',serif;font-size:2rem;font-weight:900;color:var(--jade);margin-bottom:.25rem;}
+.summary-subtitle{color:var(--muted);font-size:.85rem;margin-bottom:2rem;}
+.summary-item{padding:1rem 0;border-bottom:1px solid var(--border);}
+.summary-item:last-child{border-bottom:none;}
+.summary-stage-name{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--jade);margin-bottom:.35rem;}
+.summary-content{font-size:.9rem;color:var(--text);line-height:1.5;white-space:pre-wrap;}
+.btn-download{width:100%;padding:1rem;background:linear-gradient(135deg,var(--orange),#e55a2a);border:none;border-radius:10px;color:white;font-size:.95rem;font-weight:600;cursor:pointer;transition:opacity .15s;margin-top:1rem;}
+.btn-download:hover{opacity:.88;}
+
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(0,0,0,.2);border-top-color:#0F0E1A;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.toast{position:fixed;bottom:2rem;right:2rem;background:var(--surface2);border:1px solid var(--jade);color:var(--jade);padding:.75rem 1.25rem;border-radius:8px;font-size:.85rem;z-index:999;transform:translateY(100px);opacity:0;transition:all .3s;}
+.toast.show{transform:translateY(0);opacity:1;}
+@media(max-width:700px){.sidebar{display:none;}.main{margin-left:0;padding:1.25rem;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">SSP<span>.</span> <span style="font-size:.8rem;font-weight:300;color:var(--muted);letter-spacing:.1em">Innovation Journey</span></div>
+  <div class="topbar-right">
+    <span class="topbar-name">Guatemala 2025</span>
+    <button class="btn-reset" onclick="resetJourney()">↺ Reiniciar</button>
+  </div>
+</div>
+
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-title">Tu Journey</div>
+    <div id="stage-nav-list"></div>
+  </aside>
+  <main class="main">
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div id="stage-view"></div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STAGES = [
+  {
+    id:'producto', num:1, title:'Descripción del Producto', mode:'texto',
+    prompt:'Describe tu producto o servicio. ¿Qué es, qué hace, cómo funciona? Sé específico — esta información alimentará todo tu proceso de innovación.',
+    fields:[
+      {key:'nombre', label:'Nombre de tu producto o servicio', placeholder:'Ej: Plataforma de gestión para restaurantes...', rows:2},
+      {key:'descripcion', label:'¿Qué hace y cómo funciona?', placeholder:'Describe en detalle qué problema resuelve y cómo lo resuelve...', rows:4},
+      {key:'diferencia', label:'¿Qué lo hace diferente a lo que ya existe?', placeholder:'Tu ventaja o característica única...', rows:3},
+    ]
+  },
+  {
+    id:'segmento_logico', num:2, title:'Segmento de Mercado Lógico', mode:'texto',
+    prompt:'¿A quién crees que va dirigido tu producto? Describe a ese cliente "obvio" — el que todos esperarían que te comprara.',
+    fields:[
+      {key:'quien', label:'¿Quién es tu cliente lógico?', placeholder:'Describe a esa persona: qué hace, dónde está, qué necesita...', rows:3},
+      {key:'necesidad', label:'¿Cuál es su necesidad obvia?', placeholder:'El problema evidente que tu producto resuelve para ellos...', rows:3},
+      {key:'porque', label:'¿Por qué crees que te compraría?', placeholder:'La razón lógica por la que elegiría tu producto...', rows:3},
+    ]
+  },
+  {
+    id:'segmento_revelado', num:3, title:'Segmento de Mercado Revelado', mode:'foto_ia',
+    prompt:'Elige una o varias cartas SSP que evoquen a tu cliente real. Fotografía las cartas y responde las preguntas — la IA descubrirá tu segmento revelado.',
+    photoLabel:'📸 Sube la foto de tus cartas SSP elegidas',
+    questions:[
+      {key:'q1', label:'¿Qué hace tu cliente en su día a día?', placeholder:'Describe su rutina, contexto, entorno...', rows:2},
+      {key:'q2', label:'¿Qué emoción vive frecuentemente con el problema que resuelves?', placeholder:'Ansiedad, frustración, esperanza, confusión...', rows:2},
+      {key:'q3', label:'¿Qué ha intentado antes y no le ha funcionado?', placeholder:'Soluciones anteriores que no resolvieron su problema...', rows:2},
+      {key:'q4', label:'¿Qué cambio desea lograr si tu producto realmente funciona?', placeholder:'El sueño que tiene, la transformación que busca...', rows:2},
+    ],
+    aiButton:'✦ Descubrir mi Segmento Revelado',
+    outputMode:'segmentos'
+  },
+  {
+    id:'historia', num:4, title:'Historia Fantasiosa → Dolores, Insights y Accionadores', mode:'foto_ia',
+    prompt:'Elige cartas SSP y construye una historia fantástica donde tu cliente es el personaje principal. La IA extraerá los dolores, frustraciones y miedos reales — y sus accionadores.',
+    photoLabel:'📸 Sube la foto de tus cartas SSP para la historia',
+    questions:[
+      {key:'q1', label:'🧙 El Personaje — Dale un nombre y profesión fantástica', placeholder:'Ej: Mira, guardiana de mapas en un reino donde nadie sabe leer...', rows:2},
+      {key:'q2', label:'🌍 Su Mundo — ¿Cómo es el lugar donde vive? ¿Qué reglas tiene?', placeholder:'Describe ese mundo imposible y sus reglas...', rows:2},
+      {key:'q3', label:'🌑 La Sombra — ¿Qué carga arrastra aunque no lo diga?', placeholder:'Lo que lo persigue, lo que evita, su peso invisible...', rows:2},
+      {key:'q4', label:'🐉 El Obstáculo — ¿Qué monstruo o laberinto encuentra cada vez que avanza?', placeholder:'Lo que siempre le impide llegar a donde quiere...', rows:2},
+      {key:'q5', label:'⭐ El Deseo Secreto — ¿Qué sueña en silencio?', placeholder:'Su anhelo más profundo, lo que nunca dice en voz alta...', rows:2},
+    ],
+    aiButton:'✦ Generar Historia y Mapa Emocional',
+    outputMode:'accionadores'
+  },
+  {
+    id:'modelo_causal', num:5, title:'Modelo Causal', mode:'texto',
+    prompt:'Con la matriz que te dio el facilitador, analiza las conexiones entre tus 6 insights y accionadores. ¿Cuál tiene mayor grado de causalidad con los demás?',
+    fields:[
+      {key:'ganador', label:'¿Cuál es el accionador con mayor conectividad?', placeholder:'Escribe aquí el accionador ganador de tu modelo causal...', rows:3},
+      {key:'razon', label:'¿Por qué tiene más conexiones que los demás?', placeholder:'Explica brevemente por qué este accionador impacta a más insights...', rows:3},
+    ]
+  },
+  {
+    id:'factor_wow', num:6, title:'Propuesta de Valor y Factor WOW', mode:'solo_ia',
+    prompt:'Con todo tu proceso construido, la IA generará tu Propuesta de Valor y tu Factor WOW — ese elemento único e irrepetible que hará que tus clientes digan ¡WOW!',
+    aiButton:'✦ Generar mi Propuesta de Valor y Factor WOW',
+    outputMode:'wow'
+  },
+];
+
+let currentStage = 0;
+let journeyData = JSON.parse(localStorage.getItem('ssp_journey') || '{}');
+let photoBase64 = {};
+
+function saveLocal() {
+  const toSave = {};
+  Object.keys(journeyData).forEach(k => {
+    toSave[k] = {...journeyData[k]};
+    delete toSave[k].photoThumb; // thumbnails son muy grandes para localStorage
+  });
+  try { localStorage.setItem('ssp_journey', JSON.stringify(toSave)); } catch(e) {}
+}
+
+window.resetJourney = () => {
+  if (!confirm('¿Reiniciar todo el proceso? Se perderán tus respuestas.')) return;
+  localStorage.removeItem('ssp_journey');
+  journeyData = {};
+  photoBase64 = {};
+  currentStage = 0;
+  renderSidebar();
+  renderStage(0);
+};
+
+// ── SIDEBAR ──
+function renderSidebar() {
+  const nav = document.getElementById('stage-nav-list');
+  const allDone = STAGES.every(s => journeyData[s.id]?.completed);
+  nav.innerHTML = STAGES.map((s, i) => {
+    const done = journeyData[s.id]?.completed;
+    const active = i === currentStage;
+    return `<div class="stage-item ${active?'active':''} ${done&&!active?'completed':''}" onclick="goToStage(${i})">
+      <div class="stage-num">${done&&!active?'✓':i+1}</div>
+      <div class="stage-label">${s.title}</div>
+    </div>`;
+  }).join('') + (allDone ? `
+    <div class="stage-item" onclick="showSummary()" style="margin-top:.5rem">
+      <div class="stage-num" style="border-color:var(--orange);color:var(--orange)">★</div>
+      <div class="stage-label" style="color:var(--orange)">Ver mi Proceso Completo</div>
+    </div>` : '');
+}
+
+window.goToStage = (i) => { currentStage = i; renderSidebar(); renderStage(i); };
+
+// ── RENDER STAGE ──
+function renderStage(idx) {
+  if (idx >= STAGES.length) { showSummary(); return; }
+  const stage = STAGES[idx];
+  const saved = journeyData[stage.id] || {};
+  const completed = STAGES.filter(s => journeyData[s.id]?.completed).length;
+  document.getElementById('progress-fill').style.width = Math.round((completed/STAGES.length)*100) + '%';
+
+  let html = `<div class="stage-card">
+    <div class="stage-eyebrow">Etapa ${stage.num} de ${STAGES.length}</div>
+    <div class="stage-title">${stage.title}</div>
+    <p class="stage-prompt">${stage.prompt}</p>`;
+
+  if (stage.mode === 'texto') {
+    html += stage.fields.map(f => `
+      <div class="field-group">
+        <label class="field-label">${f.label}</label>
+        <textarea class="field-input" id="field-${f.key}" rows="${f.rows}" placeholder="${f.placeholder}">${saved[f.key]||''}</textarea>
+      </div>`).join('');
+    html += `<button class="btn-ai btn-save" onclick="saveTextStage('${stage.id}')">✓ Guardar y continuar</button>`;
+  }
+
+  if (stage.mode === 'foto_ia') {
+    html += `<div class="photo-zone ${saved.photoThumb?'has-image':''}" id="photo-zone-${stage.id}">
+      <input type="file" accept="image/*" id="photo-input-${stage.id}" capture="environment">
+      <img class="photo-preview ${saved.photoThumb?'visible':''}" id="photo-preview-${stage.id}" src="${saved.photoThumb||''}" alt="">
+      <div class="photo-placeholder"><span class="icon">📸</span>${stage.photoLabel}</div>
+      <div class="photo-change">Toca para cambiar la foto</div>
+    </div>`;
+    html += stage.questions.map(q => `
+      <div class="field-group">
+        <label class="field-label">${q.label}</label>
+        <textarea class="field-input" id="q-${q.key}" rows="${q.rows}" placeholder="${q.placeholder}">${saved[q.key]||''}</textarea>
+      </div>`).join('');
+  }
+
+  if (stage.mode === 'foto_ia' || stage.mode === 'solo_ia') {
+    html += `<button class="btn-ai" id="btn-ai-${stage.id}" onclick="runAI('${stage.id}')">${stage.aiButton}</button>
+    <button class="btn-regenerate ${saved.aiResult?'visible':''}" id="btn-regen-${stage.id}" onclick="regenAI('${stage.id}')">↺ Regenerar respuesta</button>`;
+    html += renderAIResult(stage, saved);
+  }
+
+  if (saved.completed) {
+    html += `<div class="accepted-box visible">
+      <div class="accepted-label">✓ Etapa completada</div>
+      <div class="accepted-text">${saved.completedSummary||''}</div>
+    </div>`;
+  }
+
+  html += `</div>
+  <div class="stage-nav">
+    <button class="btn-nav btn-prev" onclick="prevStage()" ${idx===0?'disabled':''}>← Anterior</button>
+    <button class="btn-nav btn-next" id="btn-next" onclick="nextStage()" ${!saved.completed?'disabled':''}>
+      ${idx===STAGES.length-1?'Ver mi proceso →':'Siguiente →'}
+    </button>
+  </div>`;
+
+  document.getElementById('stage-view').innerHTML = html;
+  initPhoto(stage, saved);
+}
+
+function renderAIResult(stage, saved) {
+  if (!saved.aiResult) return `<div class="ai-result" id="ai-result-${stage.id}"></div>`;
+
+  let inner = `<div class="ai-result-box">
+    <div class="ai-result-eyebrow">✦ Resultado generado</div>
+    <div class="ai-result-text">${saved.aiResult}</div>
+  </div>`;
+
+  if (stage.outputMode === 'segmentos' && saved.segments) {
+    inner += `<div class="segment-selector">
+      <span class="segment-label">Elige el segmento que más representa a tu cliente real:</span>
+      <div class="segment-options">
+        ${saved.segments.map((seg, i) => `
+          <div class="segment-option ${saved.selectedSegment===i?'selected':''}" onclick="selectSegment(${i})">
+            <div class="segment-option-label">${seg.label}</div>
+            ${seg.text}
+            <div class="segment-message">"${seg.message}"</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  if (stage.outputMode === 'accionadores' && saved.accionadores) {
+    const sel = saved.selectedAccionadores || [];
+    inner += `<div class="segment-selector">
+      <span class="segment-label">Elige máximo 6 que más resuenan con tu realidad:</span>
+      <div class="accionadores-grid">
+        ${saved.accionadores.map((a, i) => `
+          <div class="accionador-item ${sel.includes(i)?'selected':''}" onclick="toggleAcc(${i})">
+            <div class="accionador-tipo">${a.tipo}</div>
+            <div class="accionador-nombre">${a.nombre}</div>
+            <div class="accionador-insight">💡 ${a.insight}</div>
+            <div class="accionador-accion">⚡ ${a.accionador}</div>
+          </div>`).join('')}
+      </div>
+      <div class="selection-count">Seleccionados: <span>${sel.length}</span> / 6</div>
+      ${sel.length > 0 ? `<button class="btn-ai btn-confirm" style="margin-top:1rem" onclick="confirmAcc()">✓ Confirmar mis ${sel.length} seleccionados</button>` : ''}
+    </div>`;
+  }
+
+  if (stage.outputMode === 'wow' && saved.wowCards) {
+    inner += `<div class="wow-options">
+      ${saved.wowCards.map(w => `
+        <div class="wow-card ${w.tipo}">
+          <div class="wow-type">✨ Factor WOW ${w.tipo.toUpperCase()}</div>
+          <div class="wow-text">${w.texto}</div>
+          <div class="wow-moment">"${w.momento}"</div>
+        </div>`).join('')}
+    </div>
+    <button class="btn-ai btn-confirm" style="margin-top:1rem" onclick="acceptWOW()">✓ Este es mi Factor WOW</button>`;
+  }
+
+  return `<div class="ai-result visible" id="ai-result-${stage.id}">${inner}</div>`;
+}
+
+// ── PHOTO ──
+function initPhoto(stage, saved) {
+  const input = document.getElementById(`photo-input-${stage.id}`);
+  if (!input) return;
+  input.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const b64full = ev.target.result;
+      photoBase64[stage.id] = b64full.split(',')[1];
+      if (!journeyData[stage.id]) journeyData[stage.id] = {};
+      journeyData[stage.id].photoThumb = b64full;
+      const preview = document.getElementById(`photo-preview-${stage.id}`);
+      const zone = document.getElementById(`photo-zone-${stage.id}`);
+      if (preview) { preview.src = b64full; preview.classList.add('visible'); }
+      if (zone) zone.classList.add('has-image');
+      showToast('📸 Foto cargada');
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ── SAVE TEXT ──
+window.saveTextStage = (stageId) => {
+  const stage = STAGES.find(s => s.id === stageId);
+  if (!journeyData[stageId]) journeyData[stageId] = {};
+  let summary = '';
+  stage.fields.forEach(f => {
+    const el = document.getElementById(`field-${f.key}`);
+    if (el) { journeyData[stageId][f.key] = el.value.trim(); summary += `${f.label}:\n${el.value.trim()}\n\n`; }
+  });
+  journeyData[stageId].completed = true;
+  journeyData[stageId].completedSummary = summary.trim();
+  saveLocal();
+  document.getElementById('btn-next').disabled = false;
+  renderSidebar();
+  showToast('✓ Guardado');
+};
+
+// ── RUN AI ──
+window.runAI = async (stageId) => {
+  const stage = STAGES.find(s => s.id === stageId);
+  const saved = journeyData[stageId] || {};
+  const btn = document.getElementById(`btn-ai-${stageId}`);
+  const regen = document.getElementById(`btn-regen-${stageId}`);
+
+  if (stage.mode === 'foto_ia' && !photoBase64[stageId] && !saved.photoThumb) {
+    showToast('📸 Sube primero la foto de tus cartas'); return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Generando...';
+
+  try {
+    const e1 = journeyData['producto'] || {};
+    const e2 = journeyData['segmento_logico'] || {};
+    const e3 = journeyData['segmento_revelado'] || {};
+    const e4 = journeyData['historia'] || {};
+    const e5 = journeyData['modelo_causal'] || {};
+
+    let systemPrompt = '';
+    let userContent = [];
+    const imgData = photoBase64[stageId];
+    const hasImg = !!imgData;
+
+    if (stageId === 'segmento_revelado') {
+      const qs = stage.questions.map(q => {
+        const el = document.getElementById(`q-${q.key}`);
+        return `${q.label}: ${el?.value || saved[q.key] || ''}`;
+      }).join('\n');
+
+      systemPrompt = `Eres un experto en segmentación revelada, creatividad estratégica y branding emocional, especialista en la metodología SSP (Smart Serious Play).
+
+El emprendedor ha elegido físicamente cartas SSP como detonador simbólico y las ha fotografiado. Esa imagen es tu restricción creativa — interprétala emocionalmente, no literalmente.
+
+Contexto del emprendedor:
+- Producto: ${e1.nombre||''} — ${e1.descripcion||''}
+- Segmento lógico: ${e2.quien||''}
+
+Tu tarea:
+1. Interpreta simbólicamente las cartas en función de las respuestas
+2. Genera 3 segmentos revelados: emocional/crudo, contradicción emocional, anhelo profundo
+3. Para cada segmento un mensaje emocional gancho
+
+Reglas: no describas las cartas literalmente, no uses edad ni género, voz cálida y profunda, responde en español.
+
+Responde SOLO con este JSON exacto (sin texto adicional):
+{"interpretacion":"metáfora emocional de las cartas","segmentos":[{"label":"Emocional — crudo y empático","text":"descripción","message":"mensaje gancho"},{"label":"Contradicción emocional","text":"descripción","message":"mensaje gancho"},{"label":"Anhelo profundo no resuelto","text":"descripción","message":"mensaje gancho"}]}`;
+
+      userContent = hasImg
+        ? [{type:'image',source:{type:'base64',media_type:'image/jpeg',data:imgData}},{type:'text',text:`Estas son las cartas SSP que elegí.\n\nMis respuestas:\n${qs}`}]
+        : [{type:'text',text:`No se pudo cargar la imagen.\n\nMis respuestas:\n${qs}`}];
+    }
+
+    if (stageId === 'historia') {
+      const qs = stage.questions.map(q => {
+        const el = document.getElementById(`q-${q.key}`);
+        return `${q.label}: ${el?.value || saved[q.key] || ''}`;
+      }).join('\n');
+
+      systemPrompt = `Eres un maestro narrador simbólico y estratega emocional, especialista en SSP (Smart Serious Play).
+
+El emprendedor eligió cartas SSP físicamente. Esas cartas son tu restricción creativa — úsalas como atmósfera, no las describas literalmente.
+
+Contexto:
+- Producto: ${e1.nombre||''} — ${e1.descripcion||''}
+- Segmento revelado: ${e3.selectedSegmentText||''}
+
+MOMENTO 1 — LA HISTORIA: Escribe una historia corta (máximo 150 palabras), fantasiosa, protagonizada por el personaje. Tensión, conflicto y un destello de esperanza.
+
+MOMENTO 2 — MAPA EMOCIONAL: Extrae exactamente 3 dolores, 3 frustraciones, 3 miedos. Para cada uno: insight (verdad no dicha) y accionador (acción/recurso/alianza concreta).
+
+Responde SOLO con este JSON exacto:
+{"historia":"texto completo de la historia","elementos":[{"tipo":"💔 DOLOR","nombre":"nombre corto","descripcion":"descripción empática","insight":"verdad no dicha","accionador":"acción/recurso/alianza"},{"tipo":"💔 DOLOR","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"💔 DOLOR","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😤 FRUSTRACIÓN","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😤 FRUSTRACIÓN","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😤 FRUSTRACIÓN","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😨 MIEDO","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😨 MIEDO","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😨 MIEDO","nombre":"","descripcion":"","insight":"","accionador":""}]}`;
+
+      userContent = hasImg
+        ? [{type:'image',source:{type:'base64',media_type:'image/jpeg',data:imgData}},{type:'text',text:`Cartas SSP elegidas.\n\nRespuestas:\n${qs}`}]
+        : [{type:'text',text:`Respuestas:\n${qs}`}];
+    }
+
+    if (stageId === 'factor_wow') {
+      const selAcc = (e4.selectedAccionadores||[]).map(i => e4.accionadores?.[i]).filter(Boolean);
+      systemPrompt = `Eres un estratega de innovación y branding emocional, especialista en SSP (Smart Serious Play).
+
+Contexto completo del emprendedor:
+- Producto: ${e1.nombre||''} — ${e1.descripcion||''}
+- Segmento lógico: ${e2.quien||''}
+- Segmento revelado: ${e3.selectedSegmentText||''}
+- Accionadores seleccionados: ${selAcc.map(a=>a.accionador).join(', ')}
+- Accionador ganador (modelo causal): ${e5.ganador||''}
+- Por qué es el ganador: ${e5.razon||''}
+
+MOMENTO 1 — PROPUESTA DE VALOR:
+"Para [segmento revelado] que [insight profundo], [producto] ofrece [beneficio único basado en accionador ganador], a diferencia de [alternativas], porque [razón emocional y funcional]."
+
+MOMENTO 2 — FACTOR WOW:
+3 versiones: Funcional (qué hace diferente en práctica), Emocional (cómo hace sentir al cliente), Simbólico (qué representa para la identidad del cliente).
+El Factor WOW es ese elemento único que hace decir "¡WOW!"
+
+Responde SOLO con este JSON:
+{"propuesta":"propuesta de valor completa","wowCards":[{"tipo":"funcional","texto":"descripción WOW funcional","momento":"frase que diría el cliente"},{"tipo":"emocional","texto":"descripción WOW emocional","momento":"frase que diría el cliente"},{"tipo":"simbolico","texto":"descripción WOW simbólico","momento":"frase que diría el cliente"}]}`;
+
+      userContent = [{type:'text',text:'Genera mi propuesta de valor y Factor WOW.'}];
+    }
+
+    const resp = await fetch('https://anthropicproxy-z4dcljw5oa-uc.a.run.app', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:1500, system:systemPrompt, messages:[{role:'user',content:userContent}]})
+    });
+
+    const data = await resp.json();
+    const raw = data.content?.[0]?.text || '{}';
+    const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
+
+    if (!journeyData[stageId]) journeyData[stageId] = {};
+    if (stage.questions) stage.questions.forEach(q => {
+      const el = document.getElementById(`q-${q.key}`);
+      if (el) journeyData[stageId][q.key] = el.value.trim();
+    });
+
+    if (stageId === 'segmento_revelado') {
+      journeyData[stageId].aiResult = `🃏 Interpretación de tus cartas\n\n${parsed.interpretacion}`;
+      journeyData[stageId].segments = parsed.segmentos;
+    }
+    if (stageId === 'historia') {
+      journeyData[stageId].aiResult = `📖 LA HISTORIA\n\n${parsed.historia}`;
+      journeyData[stageId].accionadores = parsed.elementos.map(e => ({tipo:e.tipo, nombre:e.nombre, insight:e.insight, accionador:e.accionador}));
+    }
+    if (stageId === 'factor_wow') {
+      journeyData[stageId].aiResult = `🎯 PROPUESTA DE VALOR\n\n${parsed.propuesta}`;
+      journeyData[stageId].wowCards = parsed.wowCards;
+      journeyData[stageId].propuesta = parsed.propuesta;
+    }
+
+    saveLocal();
+    if (regen) regen.classList.add('visible');
+    renderStage(currentStage);
+
+  } catch(e) {
+    showToast('Error al conectar con la IA');
+    console.error(e);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = stage.aiButton;
+};
+
+window.regenAI = (stageId) => {
+  if (journeyData[stageId]) {
+    journeyData[stageId].aiResult = null;
+    journeyData[stageId].segments = null;
+    journeyData[stageId].accionadores = null;
+    journeyData[stageId].wowCards = null;
+  }
+  runAI(stageId);
+};
+
+// ── SELECTIONS ──
+window.selectSegment = (idx) => {
+  const saved = journeyData['segmento_revelado'] || {};
+  journeyData['segmento_revelado'].selectedSegment = idx;
+  journeyData['segmento_revelado'].selectedSegmentText = saved.segments?.[idx]?.text || '';
+  journeyData['segmento_revelado'].completed = true;
+  journeyData['segmento_revelado'].completedSummary = `Segmento elegido: ${saved.segments?.[idx]?.label}\n\n${saved.segments?.[idx]?.text}\n\nMensaje: "${saved.segments?.[idx]?.message}"`;
+  saveLocal();
+  document.getElementById('btn-next').disabled = false;
+  renderSidebar();
+  renderStage(currentStage);
+  showToast('✓ Segmento revelado guardado');
+};
+
+window.toggleAcc = (idx) => {
+  if (!journeyData['historia']) journeyData['historia'] = {};
+  let sel = journeyData['historia'].selectedAccionadores || [];
+  if (sel.includes(idx)) sel = sel.filter(i => i !== idx);
+  else { if (sel.length >= 6) { showToast('Máximo 6 accionadores'); return; } sel.push(idx); }
+  journeyData['historia'].selectedAccionadores = sel;
+  saveLocal();
+  renderStage(currentStage);
+};
+
+window.confirmAcc = () => {
+  const sel = journeyData['historia']?.selectedAccionadores || [];
+  if (!sel.length) { showToast('Selecciona al menos 1'); return; }
+  const accs = journeyData['historia']?.accionadores || [];
+  const txt = sel.map(i => `${accs[i]?.tipo} — ${accs[i]?.nombre}\n  💡 ${accs[i]?.insight}\n  ⚡ ${accs[i]?.accionador}`).join('\n\n');
+  journeyData['historia'].completed = true;
+  journeyData['historia'].completedSummary = `${sel.length} accionadores seleccionados:\n\n${txt}`;
+  saveLocal();
+  document.getElementById('btn-next').disabled = false;
+  renderSidebar();
+  showToast('✓ Accionadores confirmados');
+};
+
+window.acceptWOW = () => {
+  const saved = journeyData['factor_wow'] || {};
+  journeyData['factor_wow'].completed = true;
+  journeyData['factor_wow'].completedSummary = saved.propuesta || '';
+  saveLocal();
+  document.getElementById('btn-next').disabled = false;
+  renderSidebar();
+  showToast('✓ Propuesta de valor y Factor WOW guardados');
+};
+
+// ── NAV ──
+window.prevStage = () => { if (currentStage > 0) { currentStage--; renderSidebar(); renderStage(currentStage); } };
+window.nextStage = () => { currentStage++; renderSidebar(); renderStage(currentStage); };
+
+// ── SUMMARY ──
+window.showSummary = () => {
+  document.getElementById('progress-fill').style.width = '100%';
+  document.getElementById('stage-view').innerHTML = `
+    <div class="summary-card">
+      <div class="summary-title">Tu Proceso de Innovación</div>
+      <div class="summary-subtitle">Metodología SSP · ${new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'})}</div>
+      ${STAGES.map(s => {
+        const d = journeyData[s.id] || {};
+        return `<div class="summary-item">
+          <div class="summary-stage-name">${s.title}</div>
+          <div class="summary-content">${d.completedSummary||'<em style="color:var(--muted)">Sin completar</em>'}</div>
+        </div>`;
+      }).join('')}
+      <button class="btn-download" onclick="downloadProcess()">⬇ Descargar mi proceso completo</button>
+    </div>`;
+  renderSidebar();
+};
+
+window.downloadProcess = () => {
+  let txt = `MI PROCESO DE INNOVACIÓN SSP\n${'='.repeat(40)}\n${new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'})}\n\n`;
+  STAGES.forEach(s => {
+    const d = journeyData[s.id] || {};
+    txt += `${s.num}. ${s.title.toUpperCase()}\n${'─'.repeat(35)}\n${d.completedSummary||'Sin completar'}\n\n`;
+  });
+  const blob = new Blob([txt], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'proceso-innovacion-ssp.txt';
+  a.click();
+};
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── INIT ──
+renderSidebar();
+renderStage(currentStage);
+</script>
+</body>
+</html>
