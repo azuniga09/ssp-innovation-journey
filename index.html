@@ -194,6 +194,108 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .juego-step.active { background: var(--purple); }
 .juego-step.ia { background: rgba(124,111,205,.4); }
 
+
+/* ── HISTORIA STAGE ── */
+.historia-container { display: flex; flex-direction: column; gap: 1.5rem; }
+.historia-parte {
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.historia-parte:focus-within { border-color: var(--jade); }
+.historia-parte-header {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: 1rem 1.25rem .75rem;
+  border-bottom: 1px solid var(--border);
+}
+.historia-parte-emoji { font-size: 1.4rem; }
+.historia-parte-title { font-size: .95rem; font-weight: 600; color: var(--text); }
+.historia-ejemplo {
+  display: flex;
+  align-items: flex-start;
+  gap: .5rem;
+  margin: .75rem 1.25rem;
+  padding: .65rem .85rem;
+  background: rgba(78,204,163,.06);
+  border-left: 3px solid rgba(78,204,163,.3);
+  border-radius: 0 8px 8px 0;
+}
+.historia-ejemplo-icon { font-size: .8rem; color: var(--jade); flex-shrink: 0; margin-top: .1rem; }
+.historia-ejemplo-text {
+  font-size: .8rem;
+  color: var(--muted);
+  line-height: 1.5;
+  font-style: italic;
+}
+.historia-body {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 1rem;
+  padding: .75rem 1.25rem 1.25rem;
+}
+.historia-foto-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .4rem;
+}
+.historia-foto-upload {
+  width: 100px;
+  height: 130px;
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: .7rem;
+  color: var(--muted);
+  text-align: center;
+  gap: .3rem;
+  position: relative;
+  overflow: hidden;
+  transition: all .2s;
+  background: var(--surface);
+}
+.historia-foto-upload:hover { border-color: var(--jade); color: var(--jade); }
+.historia-foto-upload.has-img { border-style: solid; border-color: var(--jade); padding: 0; }
+.historia-foto-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.historia-foto-upload img { width: 100%; height: 100%; object-fit: cover; display: none; border-radius: 8px; }
+.historia-foto-upload.has-img img { display: block; }
+.historia-foto-upload.has-img .foto-placeholder { display: none; }
+.foto-placeholder { display: flex; flex-direction: column; align-items: center; gap: .25rem; pointer-events: none; }
+.foto-placeholder span { font-size: 1.4rem; }
+.historia-foto-label { font-size: .65rem; color: var(--muted); text-align: center; }
+.historia-texto textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: .85rem 1rem;
+  color: var(--text);
+  font-family: 'Fraunces', serif;
+  font-size: .95rem;
+  font-style: italic;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+  min-height: 100px;
+  transition: border-color .2s;
+}
+.historia-texto textarea:focus { border-color: var(--jade); }
+.historia-texto textarea::placeholder { color: var(--muted); opacity: .4; }
+
+@media(max-width:600px) {
+  .historia-body { grid-template-columns: 1fr; }
+  .historia-foto-zone { flex-direction: row; align-items: center; }
+  .historia-foto-upload { width: 80px; height: 105px; }
+}
+
 </style>
 </head>
 <body>
@@ -253,8 +355,8 @@ const STAGES = [
     outputMode:'segmentos'
   },
   {
-    id:'historia', num:4, title:'Historia Colaborativa → Dolores, Insights y Accionadores', mode:'juego',
-    prompt:'Co-crea una historia fantástica con la IA usando cartas SSP. Tú eliges 3 cartas, la IA elige 2 cartas aleatorias. Juntos construyen la historia de tu cliente.',
+    id:'historia', num:4, title:'Historia Fantasiosa → Dolores, Insights y Accionadores', mode:'historia',
+    prompt:'Con tus cartas SSP físicas construye una historia fantástica de tu cliente. Sube la foto de las cartas que elegiste para cada parte y escribe tu versión. La IA la transformará en una historia emotiva y extraerá tu mapa emocional.',
     aiButton:'✦ Generar Historia y Mapa Emocional',
     outputMode:'accionadores'
   },
@@ -353,11 +455,11 @@ function renderStage(idx) {
       </div>`).join('');
   }
 
-  if (stage.mode === 'juego') {
-    html += renderJuegoStage(saved);
+  if (stage.mode === 'historia') {
+    html += renderHistoriaStage(saved);
   }
 
-  if (stage.mode === 'foto_ia' || stage.mode === 'solo_ia' || stage.mode === 'juego') {
+  if (stage.mode === 'foto_ia' || stage.mode === 'solo_ia' || stage.mode === 'juego' || stage.mode === 'historia') {
     html += `<button class="btn-ai" id="btn-ai-${stage.id}" onclick="runAI('${stage.id}')">${stage.aiButton}</button>
     <button class="btn-regenerate ${saved.aiResult?'visible':''}" id="btn-regen-${stage.id}" onclick="regenAI('${stage.id}')">↺ Regenerar respuesta</button>`;
     html += renderAIResult(stage, saved);
@@ -1084,6 +1186,212 @@ window.runAI = async (stageId) => {
   }
 
   if (btn) { btn.disabled = false; btn.innerHTML = '✦ Generar Mapa Emocional Completo'; }
+};
+
+
+// ── HISTORIA STAGE ──
+const HISTORIA_PARTES = [
+  {
+    id: 'personaje',
+    emoji: '🧙',
+    title: 'El Personaje',
+    ejemplo: 'Ej: "Mira es una guardiana de mapas en un reino donde nadie sabe leer. Viste de colores imposibles y habla con los árboles antes de tomar decisiones."',
+    placeholder: 'Cuéntame quién es tu personaje, cómo se llama, qué hace en ese mundo imposible...'
+  },
+  {
+    id: 'mundo',
+    emoji: '🌍',
+    title: 'Su Mundo',
+    ejemplo: 'Ej: "Vive en una ciudad donde los relojes corren al revés, cada puerta lleva a un lugar diferente y el sol sale dos veces al día pero nadie sabe cuándo."',
+    placeholder: '¿Cómo es el lugar donde vive? ¿Qué reglas raras tiene ese mundo?...'
+  },
+  {
+    id: 'sombra',
+    emoji: '🌑',
+    title: 'La Sombra',
+    ejemplo: 'Ej: "Carga con un mapa que nunca termina de dibujarse. Cada vez que cree haberlo completado, aparece un territorio nuevo que lo hace sentir que no avanza."',
+    placeholder: '¿Qué carga invisible arrastra el personaje? ¿Qué le pesa aunque nunca lo diga?...'
+  },
+  {
+    id: 'obstaculo',
+    emoji: '🐉',
+    title: 'El Obstáculo',
+    ejemplo: 'Ej: "Cada vez que intenta cruzar el puente hacia el Gran Mercado, aparece un dragón que habla en idiomas que nadie entiende y exige respuestas que nadie tiene."',
+    placeholder: '¿Qué monstruo, muro o laberinto aparece siempre que intenta avanzar?...'
+  },
+  {
+    id: 'deseo',
+    emoji: '⭐',
+    title: 'El Deseo Secreto',
+    ejemplo: 'Ej: "En silencio, antes de dormir, sueña con el día en que su mapa sea el más valioso del reino. Que alguien llegue a ella y le diga: sin ti, todos estaríamos perdidos."',
+    placeholder: '¿Qué sueña en silencio el personaje? ¿Qué pasaría si el obstáculo desapareciera?...'
+  }
+];
+
+let historiaPhotos = {}; // {personaje: base64, mundo: base64, ...}
+
+function renderHistoriaStage(saved) {
+  const partes = HISTORIA_PARTES.map(p => {
+    const hasFoto = saved['foto_' + p.id] || historiaPhotos[p.id];
+    return `<div class="historia-parte">
+      <div class="historia-parte-header">
+        <span class="historia-parte-emoji">${p.emoji}</span>
+        <span class="historia-parte-title">${p.title}</span>
+      </div>
+      <div class="historia-ejemplo">
+        <span class="historia-ejemplo-icon">💡</span>
+        <span class="historia-ejemplo-text">${p.ejemplo}</span>
+      </div>
+      <div class="historia-body">
+        <div class="historia-foto-zone">
+          <div class="historia-foto-upload ${hasFoto?'has-img':''}" id="hfoto-${p.id}">
+            <input type="file" accept="image/*" capture="environment" onchange="historiaFotoChange(event,'${p.id}')">
+            <div class="foto-placeholder">
+              <span>📸</span>
+              <span style="font-size:.65rem">Sube tu carta</span>
+            </div>
+            <img src="${saved['foto_'+p.id]||''}" alt="" id="hfoto-img-${p.id}">
+          </div>
+          <div class="historia-foto-label">${hasFoto?'✓ Carta subida':'Foto de la carta'}</div>
+        </div>
+        <div class="historia-texto">
+          <textarea id="htexto-${p.id}" placeholder="${p.placeholder}">${saved['texto_'+p.id]||''}</textarea>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="historia-container">${partes}</div>`;
+}
+
+window.historiaFotoChange = (event, parteId) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    const b64full = ev.target.result;
+    // Compress
+    try {
+      const img = new Image();
+      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = b64full; });
+      const canvas = document.createElement('canvas');
+      const scale = Math.min(1, 600 / Math.max(img.width, img.height));
+      canvas.width = Math.floor(img.width * scale);
+      canvas.height = Math.floor(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      const compressed = canvas.toDataURL('image/jpeg', 0.6);
+      historiaPhotos[parteId] = compressed.split(',')[1];
+      // Update UI
+      const zone = document.getElementById('hfoto-' + parteId);
+      const imgEl = document.getElementById('hfoto-img-' + parteId);
+      if (zone) zone.classList.add('has-img');
+      if (imgEl) { imgEl.src = compressed; imgEl.style.display = 'block'; }
+      if (!journeyData['historia']) journeyData['historia'] = {};
+      journeyData['historia']['foto_' + parteId] = compressed;
+      saveLocal();
+      showToast('📸 Carta ' + parteId + ' guardada');
+    } catch(e) { console.error(e); }
+  };
+  reader.readAsDataURL(file);
+};
+
+// Save historia text fields
+function saveHistoriaTextos() {
+  if (!journeyData['historia']) journeyData['historia'] = {};
+  HISTORIA_PARTES.forEach(p => {
+    const el = document.getElementById('htexto-' + p.id);
+    if (el) journeyData['historia']['texto_' + p.id] = el.value.trim();
+  });
+}
+
+// Override runAI for historia mode
+const _origRunAI = window.runAI;
+window.runAI = async (stageId) => {
+  if (stageId !== 'historia') return _origRunAI(stageId);
+
+  // Save current text
+  saveHistoriaTextos();
+
+  const btn = document.getElementById('btn-ai-historia');
+  const regen = document.getElementById('btn-regen-historia');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Generando historia y mapa emocional...'; }
+
+  const e1 = journeyData['producto'] || {};
+  const e3 = journeyData['segmento_revelado'] || {};
+  const h = journeyData['historia'] || {};
+
+  // Build context from 5 partes
+  const partesContext = HISTORIA_PARTES.map(p => {
+    const texto = h['texto_' + p.id] || '';
+    return p.emoji + ' ' + p.title + ': ' + texto;
+  }).join('\n');
+
+  const systemPrompt = [
+    'Eres un escritor creativo y estratega emocional especialista en SSP (Smart Serious Play).',
+    'Un emprendedor ha construido los elementos de una historia fantasiosa sobre su cliente usando cartas SSP.',
+    'Contexto del negocio:',
+    '- Producto: ' + (e1.nombre||'') + ' - ' + (e1.descripcion||''),
+    '- Segmento revelado: ' + (e3.selectedSegmentText||''),
+    'Elementos de la historia escritos por el emprendedor:',
+    partesContext,
+    'TU TAREA TIENE DOS MOMENTOS:',
+    'MOMENTO 1 - LA HISTORIA:',
+    'Toma los elementos crudos del emprendedor y transformalos en una historia corta (150 palabras max), completamente fantasiosa, emotiva y metaforizada. Dale drama, tension y un destello de esperanza al final.',
+    'MOMENTO 2 - MAPA EMOCIONAL:',
+    'De esa historia extrae exactamente 3 dolores, 3 frustraciones y 3 miedos del cliente real.',
+    'Para cada uno genera: insight (verdad no dicha) y accionador (accion/recurso/alianza concreta).',
+    'Responde SOLO con este JSON exacto (sin texto adicional):',
+    '{"historia":"texto completo de la historia","elementos":[{"tipo":"DOLOR","nombre":"nombre corto","descripcion":"descripcion empatica","insight":"verdad no dicha","accionador":"accion concreta"},{"tipo":"DOLOR","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"DOLOR","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"FRUSTRACION","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"FRUSTRACION","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"FRUSTRACION","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"MIEDO","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"MIEDO","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"MIEDO","nombre":"","descripcion":"","insight":"","accionador":""}]}'
+  ].join('\n\n');
+
+    // Build user content with images
+  const userContent = [];
+
+  // Add images if available
+  HISTORIA_PARTES.forEach(p => {
+    const foto = historiaPhotos[p.id] || (h['foto_'+p.id]?.split(',')[1]);
+    if (foto) {
+      userContent.push({type:'image', source:{type:'base64', media_type:'image/jpeg', data:foto}});
+    }
+  });
+
+  userContent.push({type:'text', text:'Estos son los elementos de mi historia y las fotos de las cartas SSP que elegí para cada parte. Genera la historia y el mapa emocional.'});
+
+  try {
+    const resp = await fetch('https://anthropicproxy-z4dcljw5oa-uc.a.run.app', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5',
+        max_tokens: 2000,
+        system: systemPrompt,
+        messages: [{role: 'user', content: userContent}]
+      })
+    });
+
+    if (!resp.ok) throw new Error('Error ' + resp.status);
+    const data = await resp.json();
+    const raw = data.content && data.content[0] ? data.content[0].text : '{}';
+    const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
+
+    if (!journeyData['historia']) journeyData['historia'] = {};
+    journeyData['historia'].aiResult = 'HISTORIA\n\n' + parsed.historia;
+    journeyData['historia'].accionadores = parsed.elementos.map(e => ({
+      tipo: e.tipo === 'DOLOR' ? '💔 DOLOR' : e.tipo === 'FRUSTRACION' ? '😤 FRUSTRACIÓN' : '😨 MIEDO',
+      nombre: e.nombre,
+      insight: e.insight,
+      accionador: e.accionador
+    }));
+    saveLocal();
+    if (regen) regen.classList.add('visible');
+    renderStage(currentStage);
+
+  } catch(e) {
+    showToast('Error al generar — intenta de nuevo');
+    console.error(e);
+  }
+
+  if (btn) { btn.disabled = false; btn.innerHTML = '✦ Generar Historia y Mapa Emocional'; }
 };
 
 </script>
