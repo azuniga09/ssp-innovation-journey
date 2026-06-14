@@ -296,6 +296,65 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   .historia-foto-upload { width: 80px; height: 105px; }
 }
 
+
+/* ── CAUSAL STAGE ── */
+.causal-container { display: flex; flex-direction: column; gap: 1.25rem; }
+
+.causal-foto-zone {
+  border: 2px dashed var(--border);
+  border-radius: 14px;
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+  overflow: hidden;
+  background: var(--surface2);
+}
+.causal-foto-zone:hover { border-color: var(--jade); background: var(--jade-dim); }
+.causal-foto-zone.has-img { border-style: solid; border-color: var(--jade); padding: 0; }
+.causal-foto-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; z-index: 2; }
+.causal-foto-preview { width: 100%; max-height: 320px; object-fit: contain; border-radius: 12px; display: none; }
+.causal-foto-preview.visible { display: block; }
+.causal-foto-zone.has-img .causal-placeholder { display: none; }
+.causal-foto-zone.has-img .causal-change { display: block; }
+.causal-placeholder { color: var(--muted); }
+.causal-placeholder .icon { font-size: 2.5rem; display: block; margin-bottom: .5rem; }
+.causal-change { display: none; font-size: .75rem; color: var(--jade); padding: .5rem; }
+
+.causal-field {
+  background: var(--card-bg);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem;
+  transition: border-color .2s;
+}
+.causal-field:focus-within { border-color: var(--jade); }
+.causal-field-header {
+  display: flex; align-items: center; gap: .6rem;
+  margin-bottom: .6rem;
+}
+.causal-field-emoji { font-size: 1.3rem; }
+.causal-field-title { font-size: .9rem; font-weight: 600; color: var(--text); }
+.causal-field-ejemplo {
+  display: flex; gap: .5rem; align-items: flex-start;
+  padding: .6rem .8rem;
+  background: rgba(78,204,163,.06);
+  border-left: 3px solid rgba(78,204,163,.3);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: .75rem;
+  font-size: .78rem; color: var(--muted); font-style: italic; line-height: 1.5;
+}
+.causal-field textarea {
+  width: 100%; background: var(--surface2);
+  border: 1.5px solid var(--border); border-radius: 10px;
+  padding: .85rem 1rem; color: var(--text);
+  font-family: 'Inter', sans-serif; font-size: .9rem;
+  outline: none; resize: none; transition: border-color .2s;
+}
+.causal-field textarea:focus { border-color: var(--jade); }
+.causal-field textarea::placeholder { color: var(--muted); opacity: .4; }
+
 </style>
 </head>
 <body>
@@ -361,12 +420,8 @@ const STAGES = [
     outputMode:'accionadores'
   },
   {
-    id:'modelo_causal', num:5, title:'Modelo Causal', mode:'texto',
-    prompt:'Con la matriz que te dio el facilitador, analiza las conexiones entre tus 6 insights y accionadores. ¿Cuál tiene mayor grado de causalidad con los demás?',
-    fields:[
-      {key:'ganador', label:'¿Cuál es el accionador con mayor conectividad?', placeholder:'Escribe aquí el accionador ganador de tu modelo causal...', rows:3},
-      {key:'razon', label:'¿Por qué tiene más conexiones que los demás?', placeholder:'Explica brevemente por qué este accionador impacta a más insights...', rows:3},
-    ]
+    id:'modelo_causal', num:5, title:'Modelo Causal', mode:'causal',
+    prompt:'Llena la matriz física que te dio el facilitador. Valora los grados de causalidad entre tus 6 insights y accionadores. Luego fotografía tu matriz y registra el ganador.',
   },
   {
     id:'factor_wow', num:6, title:'Propuesta de Valor y Factor WOW', mode:'solo_ia',
@@ -459,7 +514,12 @@ function renderStage(idx) {
     html += renderHistoriaStage(saved);
   }
 
-  if (stage.mode === 'foto_ia' || stage.mode === 'solo_ia' || stage.mode === 'juego' || stage.mode === 'historia') {
+  if (stage.mode === 'causal') {
+    html += renderCausalStage(saved);
+    html += `<button class="btn-ai" style="background:linear-gradient(135deg,var(--purple),#6058b0)" onclick="saveCausalStage()">✓ Guardar Modelo Causal</button>`;
+  }
+
+  if (stage.mode === 'foto_ia' || stage.mode === 'solo_ia' || stage.mode === 'juego' || stage.mode === 'historia' || stage.mode === 'causal') {
     html += `<button class="btn-ai" id="btn-ai-${stage.id}" onclick="runAI('${stage.id}')">${stage.aiButton}</button>
     <button class="btn-regenerate ${saved.aiResult?'visible':''}" id="btn-regen-${stage.id}" onclick="regenAI('${stage.id}')">↺ Regenerar respuesta</button>`;
     html += renderAIResult(stage, saved);
@@ -1392,6 +1452,94 @@ window.runAI = async (stageId) => {
   }
 
   if (btn) { btn.disabled = false; btn.innerHTML = '✦ Generar Historia y Mapa Emocional'; }
+};
+
+
+// ── CAUSAL STAGE ──
+let causalMatrizPhoto = null;
+
+function renderCausalStage(saved) {
+  const hasFoto = saved.matrizFoto || causalMatrizPhoto;
+  return '<div class="causal-container">' +
+
+    // Foto de la matriz
+    '<div class="causal-foto-zone ' + (hasFoto?'has-img':'') + '" id="causal-foto-zone">' +
+    '<input type="file" accept="image/*" capture="environment" onchange="causalFotoChange(event)">' +
+    '<div class="causal-placeholder">' +
+    '<span class="icon">📸</span>' +
+    '<span style="font-size:.9rem;color:var(--muted)">Sube la foto de tu matriz causal llena</span>' +
+    '<span style="font-size:.75rem;color:var(--muted);opacity:.7;margin-top:.25rem;display:block">Fotografía la matriz física que llenaste con el facilitador</span>' +
+    '</div>' +
+    '<img class="causal-foto-preview ' + (hasFoto?'visible':'') + '" id="causal-foto-preview" src="' + (saved.matrizFoto||'') + '" alt="">' +
+    '<div class="causal-change">✓ Matriz cargada · toca para cambiar</div>' +
+    '</div>' +
+
+    // Campo 1: accionador ganador
+    '<div class="causal-field">' +
+    '<div class="causal-field-header">' +
+    '<span class="causal-field-emoji">🏆</span>' +
+    '<span class="causal-field-title">Accionador con mayor grado de conectividad</span>' +
+    '</div>' +
+    '<div class="causal-field-ejemplo">💡 Ej: "Crear rituales de cocina participativos donde los clientes cocinen junto a cocineros tradicionistas"</div>' +
+    '<textarea id="causal-ganador" rows="3" placeholder="Escribe el accionador que tuvo más conexiones en tu matriz...">' + (saved.ganador||'') + '</textarea>' +
+    '</div>' +
+
+    // Campo 2: propuesta de valor
+    '<div class="causal-field">' +
+    '<div class="causal-field-header">' +
+    '<span class="causal-field-emoji">🎯</span>' +
+    '<span class="causal-field-title">Variable que representa tu Propuesta de Valor</span>' +
+    '</div>' +
+    '<div class="causal-field-ejemplo">💡 Ej: "La experiencia de reconectar con tu identidad y tus raíces a través del sabor y la memoria"</div>' +
+    '<textarea id="causal-propuesta" rows="3" placeholder="¿Qué variable o concepto central emerge de ese accionador ganador?">' + (saved.propuesta_variable||'') + '</textarea>' +
+    '</div>' +
+
+    '</div>';
+}
+
+window.causalFotoChange = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    const b64full = ev.target.result;
+    try {
+      const img = new Image();
+      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = b64full; });
+      const canvas = document.createElement('canvas');
+      const scale = Math.min(1, 800 / Math.max(img.width, img.height));
+      canvas.width = Math.floor(img.width * scale);
+      canvas.height = Math.floor(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      const compressed = canvas.toDataURL('image/jpeg', 0.7);
+      causalMatrizPhoto = compressed.split(',')[1];
+      const zone = document.getElementById('causal-foto-zone');
+      const preview = document.getElementById('causal-foto-preview');
+      if (zone) zone.classList.add('has-img');
+      if (preview) { preview.src = compressed; preview.classList.add('visible'); }
+      if (!journeyData['modelo_causal']) journeyData['modelo_causal'] = {};
+      journeyData['modelo_causal'].matrizFoto = compressed;
+      saveLocal();
+      showToast('📸 Matriz guardada');
+    } catch(e) { console.error(e); }
+  };
+  reader.readAsDataURL(file);
+};
+
+window.saveCausalStage = async () => {
+  const ganador = document.getElementById('causal-ganador')?.value.trim();
+  const propuesta = document.getElementById('causal-propuesta')?.value.trim();
+  if (!ganador) { showToast('Escribe el accionador ganador'); return; }
+  if (!propuesta) { showToast('Escribe la variable de propuesta de valor'); return; }
+  if (!journeyData['modelo_causal']) journeyData['modelo_causal'] = {};
+  journeyData['modelo_causal'].ganador = ganador;
+  journeyData['modelo_causal'].propuesta_variable = propuesta;
+  journeyData['modelo_causal'].completed = true;
+  journeyData['modelo_causal'].completedSummary = 'Accionador ganador: ' + ganador + '\n\nPropuesta de valor: ' + propuesta;
+  saveLocal();
+  document.getElementById('btn-next').disabled = false;
+  renderSidebar();
+  showToast('✓ Modelo causal guardado');
 };
 
 </script>
