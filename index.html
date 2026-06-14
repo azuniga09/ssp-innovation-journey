@@ -536,25 +536,44 @@ Responde SOLO con este JSON:
       userContent = [{type:'text',text:'Genera mi propuesta de valor y Factor WOW.'}];
     }
 
-    // Merge system prompt into first user message for proxy compatibility
-    const fullContent = Array.isArray(userContent) ? userContent : [{type:'text',text:userContent}];
-    const systemMsg = {type:'text', text: systemPrompt + '\n\n---\n'};
-    const mergedContent = [systemMsg, ...fullContent];
+    // Build content and compress image if needed
+    let finalContent = Array.isArray(userContent) ? userContent : [{type:'text',text:userContent}];
+    const imgBlock = finalContent.find(b => b.type === 'image');
+    if (imgBlock && imgBlock.source && imgBlock.source.data && imgBlock.source.data.length > 400000) {
+      try {
+        const img = new Image();
+        await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = 'data:image/jpeg;base64,' + imgBlock.source.data; });
+        const canvas = document.createElement('canvas');
+        const scale = Math.min(1, 800 / img.width);
+        canvas.width = Math.floor(img.width * scale);
+        canvas.height = Math.floor(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        imgBlock.source.data = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
+        imgBlock.source.media_type = 'image/jpeg';
+      } catch(e) { console.warn('Image compress failed', e); }
+    }
 
     const resp = await fetch('https://anthropicproxy-z4dcljw5oa-uc.a.run.app', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({model:'claude-haiku-4-5', max_tokens:2000, messages:[{role:'user',content:mergedContent}]})
+      body: JSON.stringify({model:'claude-haiku-4-5', max_tokens:2000, system:systemPrompt, messages:[{role:'user',content:finalContent}]})
     });
 
+    if (!resp.ok) {
+      const errText = await resp.text();
+      console.error('Proxy error:', resp.status, errText);
+      throw new Error('Error del servidor: ' + resp.status);
+    }
+
     const data = await resp.json();
-    const raw = data.content?.[0]?.text || '{}';
+    const raw = data.content && data.content[0] ? data.content[0].text : '{}';
     let parsed;
     try {
       parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
     } catch(parseErr) {
-      console.error('Parse error:', raw);
-      throw new Error('La IA no devolvió JSON válido: ' + raw.substring(0,200));
+      console.error('Parse error, raw:', raw);
+      showToast('Error al procesar — intenta regenerar');
+      throw new Error('JSON invalido');
     }
 
     if (!journeyData[stageId]) journeyData[stageId] = {};
