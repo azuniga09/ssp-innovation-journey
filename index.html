@@ -355,6 +355,37 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .causal-field textarea:focus { border-color: var(--jade); }
 .causal-field textarea::placeholder { color: var(--muted); opacity: .4; }
 
+
+/* ── FLOATING SSP TEST BUTTON ── */
+.btn-ssp-test {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .7rem 1.1rem;
+  background: linear-gradient(135deg, var(--purple), #5a4fb0);
+  border: none;
+  border-radius: 50px;
+  color: white;
+  font-family: 'Inter', sans-serif;
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 4px 20px rgba(124,111,205,.4);
+  transition: all .2s;
+}
+.btn-ssp-test:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(124,111,205,.6);
+}
+.btn-ssp-test .test-emoji { font-size: 1rem; }
+.btn-ssp-test .test-text { line-height: 1.2; }
+.btn-ssp-test .test-sub { font-size: .68rem; font-weight: 400; opacity: .8; display: block; }
+
 </style>
 </head>
 <body>
@@ -1543,5 +1574,15 @@ window.saveCausalStage = async () => {
 };
 
 </script>
+
+<!-- SSP Test floating button -->
+<a class="btn-ssp-test" href="https://azuniga09.github.io/ssp-test" target="_blank">
+  <span class="test-emoji">🎮</span>
+  <span class="test-text">
+    ¿Qué jugador eres?
+    <span class="test-sub">Test SSP Player</span>
+  </span>
+</a>
+
 </body>
 </html>
