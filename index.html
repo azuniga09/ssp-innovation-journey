@@ -975,23 +975,18 @@ window.iaJugarTurno = async (turno) => {
 
   const fragmentAnterior = juegoState.iaFragments[2] ? `Fragmento anterior de la historia: ${juegoState.iaFragments[2]}` : '';
 
-  const systemPrompt = `Eres un narrador de historias fantásticas colaborando con un emprendedor en la metodología SSP.
-
-Contexto del negocio:
-- Producto: ${e1.nombre||''} — ${e1.descripcion||''}
-- Segmento revelado: ${e3.selectedSegmentText||''}
-
-El emprendedor ha elegido cartas SSP y descrito lo que ve. Tú debes:
-1. Tomar la carta aleatoria que te tocó (#${iaCard.id}) e interpretarla emocionalmente (no literalmente)
-2. Escribir UN fragmento corto de historia (máximo 80 palabras) que continúe la narrativa
-3. El fragmento debe conectar la carta del emprendedor con la tuya de forma poética
-
-Contexto de la historia hasta ahora:
-${contextSoFar}
-${fragmentAnterior}
-
-Responde SOLO con este JSON:
-{"fragmento":"el fragmento de historia continuado, máximo 80 palabras, fantasioso y metafórico"}`;
+  const systemPrompt = 'Eres un narrador de historias fantásticas colaborando con un emprendedor en la metodología SSP.' +
+    '\n\nContexto del negocio:' +
+    '\n- Producto: ' + (e1.nombre||'') + ' — ' + (e1.descripcion||'') +
+    '\n- Segmento revelado: ' + (e3.selectedSegmentText||'') +
+    '\n\nEl emprendedor ha elegido cartas SSP y descrito lo que ve. Tú debes:' +
+    '\n1. Tomar la carta aleatoria que te tocó (#' + iaCard.id + ') e interpretarla emocionalmente (no literalmente)' +
+    '\n2. Escribir UN fragmento corto de historia (máximo 80 palabras) que continúe la narrativa' +
+    '\n3. El fragmento debe conectar la carta del emprendedor con la tuya de forma poética' +
+    '\n\nContexto de la historia hasta ahora:\n' + contextSoFar +
+    '\n' + fragmentAnterior +
+    '\n\nResponde SOLO con este JSON:' +
+    '\n{"fragmento":"el fragmento de historia continuado, máximo 80 palabras, fantasioso y metafórico"}';
 
   try {
     const resp = await fetch('https://anthropicproxy-z4dcljw5oa-uc.a.run.app', {
@@ -1046,26 +1041,19 @@ window.runAI = async (stageId) => {
     `Turno 5 — Deseo Secreto (carta #${juegoState.cards[5]}): "${juegoState.metaphors[5]}"`,
   ].join('\n');
 
-  const systemPrompt = `Eres un estratega emocional especialista en SSP (Smart Serious Play).
-
-Una historia colaborativa entre un emprendedor y la IA ha sido co-creada usando cartas SSP. A partir de esa historia debes extraer el mapa emocional del cliente del emprendedor.
-
-Contexto del negocio:
-- Producto: ${e1.nombre||''} — ${e1.descripcion||''}
-- Segmento revelado: ${e3.selectedSegmentText||''}
-
-Historia co-creada:
-${storyContext}
-
-Extrae exactamente:
-- 3 DOLORES (lo que carga, lo que pesa)
-- 3 FRUSTRACIONES (lo que intenta y falla)
-- 3 MIEDOS (lo que paraliza en silencio)
-
-Para cada uno: insight (verdad no dicha) y accionador (acción/recurso/alianza concreta).
-
-Responde SOLO con este JSON:
-{"historia":"resumen poético de la historia co-creada en 100 palabras","elementos":[{"tipo":"💔 DOLOR","nombre":"nombre corto","descripcion":"descripción empática","insight":"verdad no dicha","accionador":"acción concreta"},{"tipo":"💔 DOLOR","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"💔 DOLOR","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😤 FRUSTRACIÓN","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😤 FRUSTRACIÓN","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😤 FRUSTRACIÓN","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😨 MIEDO","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😨 MIEDO","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😨 MIEDO","nombre":"","descripcion":"","insight":"","accionador":""}]}`;
+  const systemPrompt = 'Eres un estratega emocional especialista en SSP (Smart Serious Play).' +
+    '\n\nUna historia colaborativa entre un emprendedor y la IA ha sido co-creada usando cartas SSP. A partir de esa historia debes extraer el mapa emocional del cliente del emprendedor.' +
+    '\n\nContexto del negocio:' +
+    '\n- Producto: ' + (e1.nombre||'') + ' — ' + (e1.descripcion||'') +
+    '\n- Segmento revelado: ' + (e3.selectedSegmentText||'') +
+    '\n\nHistoria co-creada:\n' + storyContext +
+    '\n\nExtrae exactamente:' +
+    '\n- 3 DOLORES (lo que carga, lo que pesa)' +
+    '\n- 3 FRUSTRACIONES (lo que intenta y falla)' +
+    '\n- 3 MIEDOS (lo que paraliza en silencio)' +
+    '\n\nPara cada uno: insight (verdad no dicha) y accionador (accion/recurso/alianza concreta).' +
+    '\n\nResponde SOLO con este JSON:' +
+    '\n{"historia":"resumen poetico de la historia co-creada en 100 palabras","elementos":[{"tipo":"DOLOR","nombre":"nombre corto","descripcion":"descripcion empatica","insight":"verdad no dicha","accionador":"accion concreta"},{"tipo":"DOLOR","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"DOLOR","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"FRUSTRACION","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"FRUSTRACION","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"FRUSTRACION","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"MIEDO","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"MIEDO","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"MIEDO","nombre":"","descripcion":"","insight":"","accionador":""}]}';
 
   try {
     const resp = await fetch('https://anthropicproxy-z4dcljw5oa-uc.a.run.app', {
