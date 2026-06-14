@@ -750,7 +750,7 @@ window.downloadProcess = () => {
   let txt = `MI PROCESO DE INNOVACIÓN SSP\n${'='.repeat(40)}\n${new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'})}\n\n`;
   STAGES.forEach(s => {
     const d = journeyData[s.id] || {};
-    txt += `${s.num}. ${s.title.toUpperCase()}\n${'─'.repeat(35)}\n${d.completedSummary||'Sin completar'}\n\n`;
+      txt += s.num + '. ' + s.title.toUpperCase() + '\n' + '-'.repeat(35) + '\n' + (d.completedSummary || 'Sin completar') + '\n\n';
   });
   const blob = new Blob([txt], {type:'text/plain'});
   const a = document.createElement('a');
@@ -971,8 +971,7 @@ window.iaJugarTurno = async (turno) => {
 
   const contextSoFar = Object.keys(juegoState.metaphors).map(t =>
     `Carta ${t} (${t=='1'?'Personaje':t=='3'?'Obstáculo':'Deseo'}): ${juegoState.metaphors[t]}`
-  ).join('
-');
+  ).join('\n');
 
   const fragmentAnterior = juegoState.iaFragments[2] ? `Fragmento anterior de la historia: ${juegoState.iaFragments[2]}` : '';
 
@@ -1045,8 +1044,7 @@ window.runAI = async (stageId) => {
     `Turno 3 — Obstáculo (carta #${juegoState.cards[3]}): "${juegoState.metaphors[3]}"`,
     `Turno 4 — IA (carta #${juegoState.cards[4]}): "${juegoState.iaFragments[4]}"`,
     `Turno 5 — Deseo Secreto (carta #${juegoState.cards[5]}): "${juegoState.metaphors[5]}"`,
-  ].join('
-');
+  ].join('\n');
 
   const systemPrompt = `Eres un estratega emocional especialista en SSP (Smart Serious Play).
 
