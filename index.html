@@ -687,18 +687,24 @@ function renderAIResult(stage, saved) {
     <div class="ai-result-text">${saved.aiResult}</div>
   </div>`;
 
-  if (stage.outputMode === 'segmentos' && saved.segments) {
-    inner += `<div class="segment-selector">
-      <span class="segment-label">Elige el segmento que más representa a tu cliente real:</span>
-      <div class="segment-options">
-        ${saved.segments.map((seg, i) => `
-          <div class="segment-option ${saved.selectedSegment===i?'selected':''}" onclick="selectSegment(${i})">
-            <div class="segment-option-label">${seg.label}</div>
-            ${seg.text}
-            <div class="segment-message">"${seg.message}"</div>
-          </div>`).join('')}
-      </div>
-    </div>`;
+  if (stage.outputMode === 'segmentos') {
+    // Show revelacion WOW
+    if (saved.revelacion) {
+      inner += '<div style="background:rgba(78,204,163,.08);border:1.5px solid rgba(78,204,163,.3);border-radius:12px;padding:1.25rem;margin-bottom:1rem">' +
+        '<div style="font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--jade);margin-bottom:.75rem">🎯 Tu cliente real es...</div>' +
+        '<div style="font-family:Fraunces,serif;font-size:1.05rem;font-weight:300;line-height:1.8;color:var(--text)">' + saved.revelacion + '</div>' +
+        '</div>';
+    }
+    if (saved.mensajes && saved.mensajes.length) {
+      inner += '<div class="segment-selector">' +
+        '<span class="segment-label">Elige el mensaje que más conecta con tu cliente:</span>' +
+        '<div class="segment-options">' +
+        saved.mensajes.map((m, i) => '<div class="segment-option ' + (saved.selectedSegment===i?'selected':'') + '" onclick="selectSegment(' + i + ')">' +
+          '<div class="segment-option-label">Mensaje ' + (i+1) + '</div>' +
+          '<div class="segment-message" style="font-size:1rem;color:var(--text);margin-top:.25rem">"' + m + '"</div>' +
+          '</div>').join('') +
+        '</div></div>';
+    }
   }
 
   if (stage.outputMode === 'accionadores' && saved.accionadores) {
@@ -806,23 +812,28 @@ window.runAI = async (stageId) => {
         return `${q.label}: ${el?.value || saved[q.key] || ''}`;
       }).join('\n');
 
-      systemPrompt = `Eres un experto en segmentación revelada, creatividad estratégica y branding emocional, especialista en la metodología SSP (Smart Serious Play).
-
-El emprendedor ha elegido físicamente cartas SSP como detonador simbólico y las ha fotografiado. Esa imagen es tu restricción creativa — interprétala emocionalmente, no literalmente.
-
-Contexto del emprendedor:
-- Producto: ${e1.nombre||''} — ${e1.descripcion||''}
-- Segmento lógico: ${e2.quien||''}
-
-Tu tarea:
-1. Interpreta simbólicamente las cartas en función de las respuestas
-2. Genera 3 segmentos revelados: emocional/crudo, contradicción emocional, anhelo profundo
-3. Para cada segmento un mensaje emocional gancho
-
-Reglas: no describas las cartas literalmente, no uses edad ni género, voz cálida y profunda, responde en español.
-
-Responde SOLO con este JSON exacto (sin texto adicional):
-{"interpretacion":"metáfora emocional de las cartas","segmentos":[{"label":"Emocional — crudo y empático","text":"descripción","message":"mensaje gancho"},{"label":"Contradicción emocional","text":"descripción","message":"mensaje gancho"},{"label":"Anhelo profundo no resuelto","text":"descripción","message":"mensaje gancho"}]}`;
+      systemPrompt = [
+        'Eres un experto en segmentacion revelada y branding emocional profundo, especialista en la metodologia SSP (Smart Serious Play).',
+        'El emprendedor eligio cartas SSP fisicamente como detonador simbolico. Esa imagen es tu restriccion creativa — interpretala emocionalmente, nunca literalmente.',
+        'Contexto del emprendedor:',
+        '- Producto: ' + (e1.nombre||'') + ' — ' + (e1.descripcion||''),
+        '- Segmento logico (quien cree que es su cliente): ' + (e2.quien||''),
+        'Respuestas del emprendedor sobre su cliente real:',
+        qs,
+        'TU MISION:',
+        'Revelar quien es REALMENTE el cliente de este emprendedor — no con demografia sino con verdades emocionales profundas.',
+        'El resultado debe hacer que el emprendedor diga: WOW, ESE ES MI CLIENTE.',
+        'Escribe UN parrafo poderoso que empiece con: Tu cliente real no es... sino la persona que...',
+        'Este parrafo debe:',
+        '- Describir al cliente por sus deseos no dichos, miedos internos y contradicciones emocionales',
+        '- Mencionar lo intangible: lo que busca sin saberlo, lo que evita sin admitirlo, lo que anhela en silencio',
+        '- Usar lenguaje directo, emocional y sin jerga de marketing',
+        '- Maximo 100 palabras, que cada palabra golpee',
+        'Luego genera 3 mensajes emocionales cortos (max 15 palabras cada uno) que conecten directamente con ese cliente.',
+        'Cada mensaje debe sentirse como si el cliente pensara: eso me describe exactamente.',
+        'Responde SOLO con este JSON (sin texto adicional, sin acentos en las keys):',
+        '{"interpretacion":"metafora emocional breve de las cartas elegidas","revelacion":"Tu cliente real no es... sino la persona que... [parrafo poderoso]","mensajes":["mensaje 1","mensaje 2","mensaje 3"]}'
+      ].join('\n');
 
       userContent = hasImg
         ? [{type:'image',source:{type:'base64',media_type:'image/jpeg',data:imgData}},{type:'text',text:`Estas son las cartas SSP que elegí.\n\nMis respuestas:\n${qs}`}]
@@ -937,8 +948,14 @@ Responde SOLO con este JSON:
     });
 
     if (stageId === 'segmento_revelado') {
-      journeyData[stageId].aiResult = `🃏 Interpretación de tus cartas\n\n${parsed.interpretacion}`;
-      journeyData[stageId].segments = parsed.segmentos;
+      journeyData[stageId].aiResult = '🃏 ' + (parsed.interpretacion || '');
+      journeyData[stageId].revelacion = parsed.revelacion || '';
+      journeyData[stageId].mensajes = parsed.mensajes || [];
+      journeyData[stageId].segments = (parsed.mensajes || []).map((m, i) => ({
+        label: 'Mensaje ' + (i+1),
+        text: '',
+        message: m
+      }));
     }
     if (stageId === 'historia') {
       journeyData[stageId].aiResult = `📖 LA HISTORIA\n\n${parsed.historia}`;
@@ -976,10 +993,12 @@ window.regenAI = (stageId) => {
 // ── SELECTIONS ──
 window.selectSegment = (idx) => {
   const saved = journeyData['segmento_revelado'] || {};
+  const mensaje = saved.mensajes ? saved.mensajes[idx] : (saved.segments?.[idx]?.message || '');
   journeyData['segmento_revelado'].selectedSegment = idx;
-  journeyData['segmento_revelado'].selectedSegmentText = saved.segments?.[idx]?.text || '';
+  journeyData['segmento_revelado'].selectedSegmentText = saved.revelacion || '';
+  journeyData['segmento_revelado'].selectedMensaje = mensaje;
   journeyData['segmento_revelado'].completed = true;
-  journeyData['segmento_revelado'].completedSummary = `Segmento elegido: ${saved.segments?.[idx]?.label}\n\n${saved.segments?.[idx]?.text}\n\nMensaje: "${saved.segments?.[idx]?.message}"`;
+  journeyData['segmento_revelado'].completedSummary = 'Tu cliente real es:\n\n' + (saved.revelacion || '') + '\n\nMensaje elegido: "' + mensaje + '"';
   saveLocal();
   document.getElementById('btn-next').disabled = false;
   renderSidebar();
