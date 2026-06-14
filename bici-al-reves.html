@@ -113,6 +113,10 @@ canvas { display:block; width:100%; border:1px solid rgba(78,204,163,.3); border
 </div>
 
 <script>
+// ── READ NORMAL SCORE FROM URL ──
+const urlParams = new URLSearchParams(window.location.search);
+const normalScore = parseInt(urlParams.get('normal')) || 0;
+
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
