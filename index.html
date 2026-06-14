@@ -3,8 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SSP Innovation Journey · Guatemala</title>
+<title>Smart Serious Play · Business World Cup Guatemala 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,900;1,300&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
 <style>
 :root {
   --bg:#0F0E1A; --surface:#1A1828; --surface2:#221F35; --jade:#4ECCA3;
@@ -13,607 +18,288 @@
   --card-bg:#1E1C2E;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 
-.topbar{position:fixed;top:0;left:0;right:0;height:56px;background:rgba(15,14,26,.95);backdrop-filter:blur(12px);
-  border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;z-index:100;}
-.topbar-logo{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:900;color:var(--jade);letter-spacing:-1px;}
+/* ── AUTH ── */
+#auth-screen {
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 30% 50%,rgba(78,204,163,.06) 0%,transparent 60%),
+             radial-gradient(ellipse at 70% 20%,rgba(124,111,205,.08) 0%,transparent 50%),var(--bg);
+  padding:2rem;
+}
+.auth-card {
+  max-width:420px;width:100%;background:var(--card-bg);border:1px solid var(--border);
+  border-radius:20px;padding:2.5rem 2rem;text-align:center;
+}
+.auth-logo {
+  font-family:'Fraunces',serif;font-size:2.5rem;font-weight:900;color:var(--jade);
+  letter-spacing:-1px;line-height:1;margin-bottom:.25rem;
+}
+.auth-logo span{color:var(--orange);}
+.auth-event{font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:2rem;}
+.auth-headline{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:300;font-style:italic;color:var(--text);margin-bottom:.5rem;line-height:1.3;}
+.auth-desc{font-size:.82rem;color:var(--muted);margin-bottom:2rem;line-height:1.5;}
+.auth-field{margin-bottom:1rem;text-align:left;}
+.auth-field label{display:block;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--jade);margin-bottom:.4rem;}
+.auth-field input{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:.85rem 1rem;color:var(--text);font-family:'Inter',sans-serif;font-size:.95rem;outline:none;transition:border-color .2s;}
+.auth-field input:focus{border-color:var(--jade);}
+.auth-field input::placeholder{color:var(--muted);opacity:.5;}
+.btn-auth{width:100%;padding:1rem;background:linear-gradient(135deg,var(--jade),#38b590);border:none;border-radius:10px;color:var(--bg);font-family:'Inter',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:all .2s;margin-top:.5rem;}
+.btn-auth:hover{opacity:.9;transform:translateY(-1px);}
+.btn-auth:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.auth-error{display:none;background:var(--orange-dim);border:1px solid rgba(255,107,53,.3);border-radius:8px;padding:.75rem 1rem;font-size:.82rem;color:var(--orange);margin-top:.75rem;text-align:left;}
+.auth-error.visible{display:block;}
+.auth-note{font-size:.72rem;color:var(--muted);opacity:.6;margin-top:1.25rem;line-height:1.5;}
+
+/* ── APP ── */
+#app{display:none;}
+
+.topbar{position:fixed;top:0;left:0;right:0;height:56px;background:rgba(15,14,26,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;z-index:100;}
+.topbar-logo{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:900;color:var(--jade);letter-spacing:-0.5px;}
 .topbar-logo span{color:var(--orange);}
+.topbar-sub{font-size:.72rem;font-weight:300;color:var(--muted);margin-left:.4rem;}
 .topbar-right{display:flex;align-items:center;gap:.75rem;}
-.topbar-name{font-size:.85rem;color:var(--muted);}
-.btn-reset{background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:.75rem;padding:.3rem .6rem;cursor:pointer;transition:all .2s;}
-.btn-reset:hover{border-color:var(--orange);color:var(--orange);}
+.topbar-user{font-size:.82rem;color:var(--muted);}
+.btn-logout{background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:.75rem;padding:.3rem .6rem;cursor:pointer;transition:all .2s;}
+.btn-logout:hover{border-color:var(--orange);color:var(--orange);}
 
-.app-layout{display:flex;padding-top:56px;min-height:100vh;}
+.app-body{display:flex;padding-top:56px;min-height:100vh;}
 
-.sidebar{width:260px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);
-  padding:1.5rem 1rem;position:fixed;top:56px;left:0;bottom:0;overflow-y:auto;}
+/* SIDEBAR */
+.sidebar{width:250px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:1.5rem 1rem;position:fixed;top:56px;left:0;bottom:0;overflow-y:auto;}
 .sidebar-title{font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1.25rem;padding-left:.5rem;}
 .stage-item{display:flex;align-items:flex-start;gap:.75rem;padding:.65rem .75rem;border-radius:8px;cursor:pointer;transition:all .15s;margin-bottom:.25rem;}
 .stage-item.active{background:var(--jade-dim);}
 .stage-item.completed{opacity:.7;}
 .stage-item:hover:not(.active){background:rgba(255,255,255,.04);}
-.stage-num{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:600;color:var(--muted);flex-shrink:0;transition:all .2s;}
+.stage-num{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:600;color:var(--muted);flex-shrink:0;}
 .stage-item.active .stage-num{border-color:var(--jade);color:var(--jade);background:var(--jade-dim);}
 .stage-item.completed .stage-num{border-color:var(--jade);background:var(--jade);color:var(--bg);}
 .stage-label{font-size:.8rem;line-height:1.3;color:var(--muted);}
 .stage-item.active .stage-label{color:var(--text);}
 
-.main{margin-left:260px;flex:1;padding:2.5rem 2rem;max-width:820px;}
+/* MAIN */
+.main{margin-left:250px;flex:1;padding:2rem 1.5rem;max-width:800px;}
 .progress-bar{height:3px;background:var(--border);border-radius:2px;margin-bottom:2rem;overflow:hidden;}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--jade),var(--purple));border-radius:2px;transition:width .4s ease;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--jade),var(--purple));border-radius:2px;transition:width .4s;}
 
+/* STAGE CARD */
 .stage-card{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:1.5rem;position:relative;overflow:hidden;}
 .stage-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--jade),var(--purple));}
 .stage-eyebrow{font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--jade);margin-bottom:.5rem;}
-.stage-title{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:600;color:var(--text);margin-bottom:.5rem;line-height:1.2;}
-.stage-prompt{color:var(--muted);font-size:.9rem;line-height:1.6;margin-bottom:1.5rem;}
+.stage-title{font-family:'Fraunces',serif;font-size:1.7rem;font-weight:600;color:var(--text);margin-bottom:.5rem;line-height:1.2;}
+.stage-prompt{color:var(--muted);font-size:.88rem;line-height:1.6;margin-bottom:1.5rem;}
 
+/* FIELDS */
 .field-group{margin-bottom:1.25rem;}
-.field-label{font-size:.75rem;color:var(--jade);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.5rem;display:block;}
+.field-label{font-size:.72rem;color:var(--jade);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem;display:block;}
+.field-ejemplo{display:flex;gap:.5rem;padding:.55rem .8rem;background:rgba(78,204,163,.06);border-left:3px solid rgba(78,204,163,.25);border-radius:0 7px 7px 0;margin-bottom:.6rem;font-size:.78rem;color:var(--muted);font-style:italic;line-height:1.5;}
 .field-input{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:.85rem 1rem;color:var(--text);font-family:'Inter',sans-serif;font-size:.9rem;outline:none;transition:border-color .2s;resize:none;}
 .field-input:focus{border-color:var(--jade);}
-.field-input::placeholder{color:var(--muted);opacity:.5;}
+.field-input::placeholder{color:var(--muted);opacity:.4;}
 
-.photo-zone{border:2px dashed var(--border);border-radius:12px;padding:2rem;text-align:center;margin-bottom:1.25rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
-.photo-zone:hover{border-color:var(--jade);background:var(--jade-dim);}
-.photo-zone.has-image{border-style:solid;border-color:var(--jade);padding:0;}
-.photo-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:2;}
-.photo-preview{width:100%;max-height:280px;object-fit:contain;border-radius:10px;display:none;}
-.photo-preview.visible{display:block;}
-.photo-placeholder{color:var(--muted);font-size:.9rem;pointer-events:none;}
-.photo-placeholder .icon{font-size:2.5rem;margin-bottom:.5rem;display:block;}
-.photo-zone.has-image .photo-placeholder{display:none;}
-.photo-change{font-size:.72rem;color:var(--jade);margin-top:.35rem;display:none;padding:.5rem;}
-.photo-zone.has-image .photo-change{display:block;}
+/* PHOTO */
+.photo-zone{border:2px dashed var(--border);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;background:var(--surface2);margin-bottom:1rem;}
+.photo-zone:hover{border-color:var(--jade);}
+.photo-zone.has-img{border-style:solid;border-color:var(--jade);padding:0;}
+.photo-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:2;}
+.photo-zone img{width:100%;max-height:260px;object-fit:contain;border-radius:10px;display:none;}
+.photo-zone.has-img img{display:block;}
+.photo-zone.has-img .photo-ph{display:none;}
+.photo-zone.has-img .photo-change{display:block;}
+.photo-ph{color:var(--muted);font-size:.88rem;pointer-events:none;}
+.photo-ph .icon{font-size:2rem;display:block;margin-bottom:.4rem;}
+.photo-change{display:none;font-size:.72rem;color:var(--jade);padding:.4rem;}
 
-.btn-ai{width:100%;padding:.9rem;background:linear-gradient(135deg,var(--jade),#38b590);border:none;border-radius:10px;color:var(--bg);font-family:'Inter',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem;margin-bottom:.75rem;}
-.btn-ai:hover{opacity:.9;transform:translateY(-1px);}
-.btn-ai:disabled{opacity:.4;cursor:not-allowed;transform:none;}
-.btn-save{background:linear-gradient(135deg,var(--purple),#6058b0);}
-.btn-confirm{background:linear-gradient(135deg,var(--orange),#e55a2a);}
+/* HISTORIA */
+.historia-parte{background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:1rem;transition:border-color .2s;}
+.historia-parte:focus-within{border-color:var(--jade);}
+.historia-header{display:flex;align-items:center;gap:.6rem;padding:.85rem 1.1rem .6rem;border-bottom:1px solid var(--border);}
+.historia-emoji{font-size:1.3rem;}
+.historia-title{font-size:.9rem;font-weight:600;color:var(--text);}
+.historia-ejemplo{display:flex;gap:.5rem;margin:.6rem 1rem;padding:.55rem .8rem;background:rgba(78,204,163,.06);border-left:3px solid rgba(78,204,163,.25);border-radius:0 7px 7px 0;font-size:.78rem;color:var(--muted);font-style:italic;line-height:1.5;}
+.historia-body{display:grid;grid-template-columns:100px 1fr;gap:.75rem;padding:.75rem 1rem 1rem;}
+.historia-foto{display:flex;flex-direction:column;align-items:center;gap:.3rem;}
+.hfoto-zone{width:90px;height:118px;border:2px dashed var(--border);border-radius:9px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:.65rem;color:var(--muted);text-align:center;gap:.2rem;position:relative;overflow:hidden;background:var(--surface);transition:all .2s;}
+.hfoto-zone:hover{border-color:var(--jade);}
+.hfoto-zone.has-img{border-style:solid;border-color:var(--jade);padding:0;}
+.hfoto-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.hfoto-zone img{width:100%;height:100%;object-fit:cover;display:none;border-radius:7px;}
+.hfoto-zone.has-img img{display:block;}
+.hfoto-zone.has-img .hfoto-ph{display:none;}
+.hfoto-ph{display:flex;flex-direction:column;align-items:center;gap:.2rem;pointer-events:none;}
+.hfoto-ph span:first-child{font-size:1.3rem;}
+.historia-texto textarea{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:9px;padding:.75rem .9rem;color:var(--text);font-family:'Fraunces',serif;font-size:.92rem;font-style:italic;line-height:1.6;resize:none;outline:none;min-height:95px;transition:border-color .2s;}
+.historia-texto textarea:focus{border-color:var(--jade);}
+.historia-texto textarea::placeholder{color:var(--muted);opacity:.4;}
 
-.btn-regenerate{width:100%;padding:.7rem;background:none;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:.85rem;cursor:pointer;transition:all .2s;display:none;margin-bottom:.75rem;}
-.btn-regenerate.visible{display:block;}
-.btn-regenerate:hover{border-color:var(--jade);color:var(--jade);}
+/* CAUSAL */
+.causal-field{background:var(--card-bg);border:1.5px solid var(--border);border-radius:12px;padding:1.1rem;margin-bottom:1rem;transition:border-color .2s;}
+.causal-field:focus-within{border-color:var(--jade);}
+.causal-header{display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem;}
+.causal-emoji{font-size:1.2rem;}
+.causal-title{font-size:.88rem;font-weight:600;color:var(--text);}
 
+/* BUTTONS */
+.btn-primary{width:100%;padding:.9rem;background:linear-gradient(135deg,var(--jade),#38b590);border:none;border-radius:10px;color:var(--bg);font-family:'Inter',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem;margin-bottom:.6rem;}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px);}
+.btn-primary:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+.btn-secondary{width:100%;padding:.7rem;background:none;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:.85rem;cursor:pointer;transition:all .2s;display:none;margin-bottom:.6rem;}
+.btn-secondary.visible{display:block;}
+.btn-secondary:hover{border-color:var(--jade);color:var(--jade);}
+.btn-purple{background:linear-gradient(135deg,var(--purple),#6058b0);}
+.btn-orange{background:linear-gradient(135deg,var(--orange),#e55a2a);}
+
+/* AI RESULT */
 .ai-result{display:none;margin-top:1.25rem;}
 .ai-result.visible{display:block;}
-.ai-result-box{background:var(--orange-dim);border:1px solid rgba(255,107,53,.3);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
-.ai-result-eyebrow{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--orange);margin-bottom:.75rem;}
-.ai-result-text{font-family:'Fraunces',serif;font-size:1rem;font-weight:300;line-height:1.7;color:var(--text);white-space:pre-wrap;}
+.ai-box{background:var(--orange-dim);border:1px solid rgba(255,107,53,.3);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+.ai-eyebrow{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--orange);margin-bottom:.6rem;}
+.ai-text{font-family:'Fraunces',serif;font-size:1rem;font-weight:300;line-height:1.7;color:var(--text);white-space:pre-wrap;}
 
-.segment-selector{margin-top:1rem;}
-.segment-label{font-size:.75rem;color:var(--jade);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.75rem;display:block;}
-.segment-options{display:flex;flex-direction:column;gap:.5rem;}
-.segment-option{padding:1rem;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s;font-size:.88rem;line-height:1.5;}
-.segment-option:hover{border-color:var(--jade);}
-.segment-option.selected{border-color:var(--jade);background:var(--jade-dim);}
-.segment-option-label{font-size:.7rem;color:var(--orange);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem;font-weight:600;}
-.segment-message{margin-top:.5rem;font-size:.82rem;color:var(--orange);font-style:italic;}
+/* REVELACION */
+.revelacion-box{background:rgba(78,204,163,.08);border:1.5px solid rgba(78,204,163,.3);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+.revelacion-label{font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--jade);margin-bottom:.6rem;}
+.revelacion-text{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:300;line-height:1.8;color:var(--text);}
 
-.accionadores-grid{display:flex;flex-direction:column;gap:.6rem;margin-top:1rem;}
-.accionador-item{padding:.9rem 1rem;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s;}
-.accionador-item:hover{border-color:var(--purple);}
-.accionador-item.selected{border-color:var(--jade);background:var(--jade-dim);}
-.accionador-tipo{font-size:.68rem;color:var(--orange);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.2rem;font-weight:600;}
-.accionador-nombre{font-size:.85rem;color:var(--text);font-weight:600;margin-bottom:.2rem;}
-.accionador-insight{font-size:.78rem;color:var(--muted);margin-bottom:.3rem;font-style:italic;}
-.accionador-accion{font-size:.85rem;color:var(--jade);}
-.selection-count{font-size:.78rem;color:var(--muted);margin-top:.75rem;text-align:right;}
-.selection-count span{color:var(--jade);font-weight:600;}
+/* MENSAJES / SEGMENTOS */
+.options-label{font-size:.72rem;color:var(--jade);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.6rem;display:block;}
+.options-list{display:flex;flex-direction:column;gap:.5rem;}
+.option-item{padding:.9rem 1rem;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s;font-size:.88rem;line-height:1.5;}
+.option-item:hover{border-color:var(--jade);}
+.option-item.selected{border-color:var(--jade);background:var(--jade-dim);}
+.option-label{font-size:.68rem;color:var(--orange);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem;font-weight:600;}
+.option-message{font-size:.95rem;color:var(--text);font-style:italic;}
 
-.wow-options{display:flex;flex-direction:column;gap:.75rem;margin-top:1rem;}
-.wow-card{padding:1.25rem;border-radius:12px;border:1.5px solid var(--border);background:var(--surface2);}
+/* ACCIONADORES */
+.acc-item{padding:.9rem 1rem;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s;margin-bottom:.5rem;}
+.acc-item:hover{border-color:var(--purple);}
+.acc-item.selected{border-color:var(--jade);background:var(--jade-dim);}
+.acc-tipo{font-size:.68rem;color:var(--orange);text-transform:uppercase;letter-spacing:.1em;font-weight:600;margin-bottom:.2rem;}
+.acc-nombre{font-size:.88rem;color:var(--text);font-weight:600;margin-bottom:.2rem;}
+.acc-insight{font-size:.78rem;color:var(--muted);font-style:italic;margin-bottom:.3rem;}
+.acc-accion{font-size:.85rem;color:var(--jade);}
+.acc-count{font-size:.78rem;color:var(--muted);text-align:right;margin-top:.5rem;}
+.acc-count span{color:var(--jade);font-weight:600;}
+
+/* WOW */
+.wow-card{padding:1.25rem;border-radius:12px;border:1.5px solid var(--border);background:var(--surface2);margin-bottom:.75rem;}
 .wow-card.funcional{border-color:rgba(78,204,163,.4);}
 .wow-card.emocional{border-color:rgba(124,111,205,.4);}
 .wow-card.simbolico{border-color:rgba(255,107,53,.4);}
-.wow-type{font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;margin-bottom:.5rem;font-weight:600;}
+.wow-type{font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;font-weight:600;margin-bottom:.4rem;}
 .wow-card.funcional .wow-type{color:var(--jade);}
 .wow-card.emocional .wow-type{color:var(--purple);}
 .wow-card.simbolico .wow-type{color:var(--orange);}
-.wow-text{font-size:.9rem;line-height:1.6;color:var(--text);margin-bottom:.5rem;}
-.wow-moment{font-family:'Fraunces',serif;font-style:italic;font-size:.95rem;color:var(--muted);}
+.wow-text{font-size:.9rem;line-height:1.6;color:var(--text);margin-bottom:.4rem;}
+.wow-moment{font-family:'Fraunces',serif;font-style:italic;font-size:.92rem;color:var(--muted);}
 
+/* ACCEPTED */
 .accepted-box{display:none;background:rgba(78,204,163,.06);border:1px solid rgba(78,204,163,.2);border-radius:10px;padding:1rem 1.25rem;margin-top:1rem;}
 .accepted-box.visible{display:block;}
-.accepted-label{font-size:.7rem;color:var(--jade);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.35rem;}
+.accepted-label{font-size:.7rem;color:var(--jade);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.3rem;}
 .accepted-text{font-size:.88rem;color:var(--text);line-height:1.5;white-space:pre-wrap;}
 
-.stage-nav{display:flex;justify-content:space-between;margin-top:1.5rem;}
-.btn-nav{padding:.7rem 1.4rem;border-radius:8px;font-size:.85rem;font-weight:500;cursor:pointer;transition:all .15s;}
+/* NAV */
+.stage-nav{display:flex;justify-content:space-between;margin-top:1.5rem;gap:.5rem;}
+.btn-nav{padding:.75rem 1.4rem;border-radius:8px;font-size:.85rem;font-weight:500;cursor:pointer;transition:all .15s;flex:1;text-align:center;}
 .btn-prev{background:none;border:1px solid var(--border);color:var(--muted);}
 .btn-prev:hover{border-color:var(--muted);color:var(--text);}
-.btn-next{background:var(--jade);border:none;color:var(--bg);font-weight:600;}
+.btn-next{background:var(--jade);border:none;color:var(--bg);font-weight:700;}
 .btn-next:hover{opacity:.85;}
 .btn-next:disabled{opacity:.3;cursor:not-allowed;}
 
+/* SUMMARY */
 .summary-card{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:1rem;}
-.summary-title{font-family:'Fraunces',serif;font-size:2rem;font-weight:900;color:var(--jade);margin-bottom:.25rem;}
-.summary-subtitle{color:var(--muted);font-size:.85rem;margin-bottom:2rem;}
-.summary-item{padding:1rem 0;border-bottom:1px solid var(--border);}
+.summary-title{font-family:'Fraunces',serif;font-size:2rem;font-weight:900;color:var(--jade);margin-bottom:.2rem;}
+.summary-sub{color:var(--muted);font-size:.82rem;margin-bottom:1.5rem;}
+.summary-item{padding:.9rem 0;border-bottom:1px solid var(--border);}
 .summary-item:last-child{border-bottom:none;}
-.summary-stage-name{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--jade);margin-bottom:.35rem;}
-.summary-content{font-size:.9rem;color:var(--text);line-height:1.5;white-space:pre-wrap;}
-.btn-download{width:100%;padding:1rem;background:linear-gradient(135deg,var(--orange),#e55a2a);border:none;border-radius:10px;color:white;font-size:.95rem;font-weight:600;cursor:pointer;transition:opacity .15s;margin-top:1rem;}
-.btn-download:hover{opacity:.88;}
+.summary-stage{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--jade);margin-bottom:.3rem;}
+.summary-content{font-size:.88rem;color:var(--text);line-height:1.5;white-space:pre-wrap;}
 
-.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(0,0,0,.2);border-top-color:#0F0E1A;border-radius:50%;animation:spin .7s linear infinite;}
+/* FLOATING BTN */
+.btn-float{position:fixed;bottom:1.5rem;left:1.5rem;z-index:200;display:flex;align-items:center;gap:.6rem;padding:.7rem 1.1rem;background:linear-gradient(135deg,var(--purple),#5a4fb0);border:none;border-radius:50px;color:white;font-family:'Inter',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;text-decoration:none;box-shadow:0 4px 20px rgba(124,111,205,.4);transition:all .2s;}
+.btn-float:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(124,111,205,.6);}
+.btn-float-sub{font-size:.65rem;font-weight:400;opacity:.8;display:block;}
+
+/* SPINNER */
+.spinner{display:inline-block;width:15px;height:15px;border:2px solid rgba(0,0,0,.2);border-top-color:var(--bg);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
-.toast{position:fixed;bottom:2rem;right:2rem;background:var(--surface2);border:1px solid var(--jade);color:var(--jade);padding:.75rem 1.25rem;border-radius:8px;font-size:.85rem;z-index:999;transform:translateY(100px);opacity:0;transition:all .3s;}
+
+/* TOAST */
+.toast{position:fixed;top:70px;right:1rem;background:var(--surface2);border:1px solid var(--jade);color:var(--jade);padding:.7rem 1.1rem;border-radius:8px;font-size:.82rem;z-index:999;transform:translateY(-20px);opacity:0;transition:all .3s;pointer-events:none;}
 .toast.show{transform:translateY(0);opacity:1;}
-@media(max-width:700px){.sidebar{display:none;}.main{margin-left:0;padding:1.25rem;}}
 
-/* ── JUEGO STAGE ── */
-.juego-container { display: flex; flex-direction: column; gap: 1.25rem; }
-.juego-turno { background: var(--surface2); border: 1.5px solid var(--border); border-radius: 12px; padding: 1.25rem; transition: all .2s; }
-.juego-turno.active { border-color: var(--jade); background: var(--jade-dim); }
-.juego-turno.done { border-color: rgba(78,204,163,.3); opacity: .85; }
-.juego-turno.ia-turno { border-color: rgba(124,111,205,.3); background: rgba(124,111,205,.06); }
-.juego-turno.ia-turno.active { border-color: var(--purple); background: rgba(124,111,205,.12); }
-.turno-header { display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; }
-.turno-badge { font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; padding: .25rem .6rem; border-radius: 20px; }
-.turno-badge.emprendedor { background: var(--jade-dim); color: var(--jade); }
-.turno-badge.ia { background: rgba(124,111,205,.2); color: var(--purple); }
-.turno-title { font-size: .9rem; font-weight: 600; color: var(--text); }
-.turno-subtitle { font-size: .78rem; color: var(--muted); margin-top: .15rem; }
-
-/* Card picker for juego */
-.juego-cards-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: .4rem; max-height: 260px; overflow-y: auto; margin-bottom: .75rem; }
-.juego-card { aspect-ratio: 3/4; border-radius: 7px; border: 2px solid var(--border); cursor: pointer; overflow: hidden; transition: all .15s; background: var(--surface2); }
-.juego-card:hover { border-color: var(--jade); transform: scale(1.03); }
-.juego-card.selected { border-color: var(--jade); box-shadow: 0 0 0 2px var(--jade); }
-.juego-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-/* Selected card display */
-.selected-card-row { display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; }
-.selected-card-mini { width: 36px; height: 48px; border-radius: 5px; overflow: hidden; flex-shrink: 0; border: 1.5px solid var(--jade); }
-.selected-card-mini img { width: 100%; height: 100%; object-fit: cover; }
-
-/* IA card reveal */
-.ia-card-reveal { display: flex; align-items: center; gap: 1rem; padding: .75rem; background: rgba(124,111,205,.1); border-radius: 10px; margin-bottom: .75rem; }
-.ia-card-img { width: 48px; height: 64px; border-radius: 6px; overflow: hidden; border: 2px solid var(--purple); flex-shrink: 0; }
-.ia-card-img img { width: 100%; height: 100%; object-fit: cover; }
-.ia-card-text { font-size: .85rem; color: var(--text); line-height: 1.5; }
-.ia-story-fragment { font-family: 'Fraunces', serif; font-size: .95rem; font-style: italic; line-height: 1.7; color: var(--text); margin-top: .5rem; padding: .75rem; background: rgba(124,111,205,.08); border-radius: 8px; border-left: 3px solid var(--purple); }
-
-.juego-metaphor { width: 100%; background: none; border: none; outline: none; color: var(--text); font-family: 'Fraunces', serif; font-size: 1rem; font-style: italic; line-height: 1.6; resize: none; min-height: 60px; }
-.juego-metaphor::placeholder { color: var(--muted); opacity: .5; }
-
-.btn-juego { padding: .7rem 1.25rem; border-radius: 8px; font-size: .85rem; font-weight: 600; cursor: pointer; transition: all .15s; border: none; }
-.btn-juego-primary { background: var(--jade); color: var(--bg); }
-.btn-juego-primary:hover { opacity: .85; }
-.btn-juego-primary:disabled { opacity: .3; cursor: not-allowed; }
-.btn-juego-ia { background: var(--purple); color: white; }
-.btn-juego-ia:hover { opacity: .85; }
-.btn-juego-ia:disabled { opacity: .3; cursor: not-allowed; }
-
-.juego-progress { display: flex; gap: .4rem; margin-bottom: 1.25rem; }
-.juego-step { flex: 1; height: 4px; border-radius: 2px; background: var(--border); transition: background .3s; }
-.juego-step.done { background: var(--jade); }
-.juego-step.active { background: var(--purple); }
-.juego-step.ia { background: rgba(124,111,205,.4); }
-
-
-/* ── HISTORIA STAGE ── */
-.historia-container { display: flex; flex-direction: column; gap: 1.5rem; }
-.historia-parte {
-  background: var(--surface2);
-  border: 1.5px solid var(--border);
-  border-radius: 14px;
-  overflow: hidden;
-  transition: border-color .2s;
+/* MOBILE */
+@media(max-width:700px){
+  .sidebar{display:none;}
+  .main{margin-left:0;padding:1rem;}
+  .historia-body{grid-template-columns:1fr;}
+  .historia-foto{flex-direction:row;align-items:center;}
+  .btn-float{bottom:1rem;left:1rem;padding:.55rem .8rem;font-size:.72rem;}
+  .btn-float-sub{display:none;}
 }
-.historia-parte:focus-within { border-color: var(--jade); }
-.historia-parte-header {
-  display: flex;
-  align-items: center;
-  gap: .75rem;
-  padding: 1rem 1.25rem .75rem;
-  border-bottom: 1px solid var(--border);
-}
-.historia-parte-emoji { font-size: 1.4rem; }
-.historia-parte-title { font-size: .95rem; font-weight: 600; color: var(--text); }
-.historia-ejemplo {
-  display: flex;
-  align-items: flex-start;
-  gap: .5rem;
-  margin: .75rem 1.25rem;
-  padding: .65rem .85rem;
-  background: rgba(78,204,163,.06);
-  border-left: 3px solid rgba(78,204,163,.3);
-  border-radius: 0 8px 8px 0;
-}
-.historia-ejemplo-icon { font-size: .8rem; color: var(--jade); flex-shrink: 0; margin-top: .1rem; }
-.historia-ejemplo-text {
-  font-size: .8rem;
-  color: var(--muted);
-  line-height: 1.5;
-  font-style: italic;
-}
-.historia-body {
-  display: grid;
-  grid-template-columns: 120px 1fr;
-  gap: 1rem;
-  padding: .75rem 1.25rem 1.25rem;
-}
-.historia-foto-zone {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: .4rem;
-}
-.historia-foto-upload {
-  width: 100px;
-  height: 130px;
-  border: 2px dashed var(--border);
-  border-radius: 10px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: .7rem;
-  color: var(--muted);
-  text-align: center;
-  gap: .3rem;
-  position: relative;
-  overflow: hidden;
-  transition: all .2s;
-  background: var(--surface);
-}
-.historia-foto-upload:hover { border-color: var(--jade); color: var(--jade); }
-.historia-foto-upload.has-img { border-style: solid; border-color: var(--jade); padding: 0; }
-.historia-foto-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-.historia-foto-upload img { width: 100%; height: 100%; object-fit: cover; display: none; border-radius: 8px; }
-.historia-foto-upload.has-img img { display: block; }
-.historia-foto-upload.has-img .foto-placeholder { display: none; }
-.foto-placeholder { display: flex; flex-direction: column; align-items: center; gap: .25rem; pointer-events: none; }
-.foto-placeholder span { font-size: 1.4rem; }
-.historia-foto-label { font-size: .65rem; color: var(--muted); text-align: center; }
-.historia-texto textarea {
-  width: 100%;
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: 10px;
-  padding: .85rem 1rem;
-  color: var(--text);
-  font-family: 'Fraunces', serif;
-  font-size: .95rem;
-  font-style: italic;
-  line-height: 1.6;
-  resize: none;
-  outline: none;
-  min-height: 100px;
-  transition: border-color .2s;
-}
-.historia-texto textarea:focus { border-color: var(--jade); }
-.historia-texto textarea::placeholder { color: var(--muted); opacity: .4; }
-
-@media(max-width:600px) {
-  .historia-body { grid-template-columns: 1fr; }
-  .historia-foto-zone { flex-direction: row; align-items: center; }
-  .historia-foto-upload { width: 80px; height: 105px; }
-}
-
-
-/* ── CAUSAL STAGE ── */
-.causal-container { display: flex; flex-direction: column; gap: 1.25rem; }
-
-.causal-foto-zone {
-  border: 2px dashed var(--border);
-  border-radius: 14px;
-  padding: 1.5rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all .2s;
-  position: relative;
-  overflow: hidden;
-  background: var(--surface2);
-}
-.causal-foto-zone:hover { border-color: var(--jade); background: var(--jade-dim); }
-.causal-foto-zone.has-img { border-style: solid; border-color: var(--jade); padding: 0; }
-.causal-foto-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; z-index: 2; }
-.causal-foto-preview { width: 100%; max-height: 320px; object-fit: contain; border-radius: 12px; display: none; }
-.causal-foto-preview.visible { display: block; }
-.causal-foto-zone.has-img .causal-placeholder { display: none; }
-.causal-foto-zone.has-img .causal-change { display: block; }
-.causal-placeholder { color: var(--muted); }
-.causal-placeholder .icon { font-size: 2.5rem; display: block; margin-bottom: .5rem; }
-.causal-change { display: none; font-size: .75rem; color: var(--jade); padding: .5rem; }
-
-.causal-field {
-  background: var(--card-bg);
-  border: 1.5px solid var(--border);
-  border-radius: 14px;
-  padding: 1.25rem;
-  transition: border-color .2s;
-}
-.causal-field:focus-within { border-color: var(--jade); }
-.causal-field-header {
-  display: flex; align-items: center; gap: .6rem;
-  margin-bottom: .6rem;
-}
-.causal-field-emoji { font-size: 1.3rem; }
-.causal-field-title { font-size: .9rem; font-weight: 600; color: var(--text); }
-.causal-field-ejemplo {
-  display: flex; gap: .5rem; align-items: flex-start;
-  padding: .6rem .8rem;
-  background: rgba(78,204,163,.06);
-  border-left: 3px solid rgba(78,204,163,.3);
-  border-radius: 0 8px 8px 0;
-  margin-bottom: .75rem;
-  font-size: .78rem; color: var(--muted); font-style: italic; line-height: 1.5;
-}
-.causal-field textarea {
-  width: 100%; background: var(--surface2);
-  border: 1.5px solid var(--border); border-radius: 10px;
-  padding: .85rem 1rem; color: var(--text);
-  font-family: 'Inter', sans-serif; font-size: .9rem;
-  outline: none; resize: none; transition: border-color .2s;
-}
-.causal-field textarea:focus { border-color: var(--jade); }
-.causal-field textarea::placeholder { color: var(--muted); opacity: .4; }
-
-
-/* ── FLOATING SSP TEST BUTTON ── */
-.btn-ssp-test {
-  position: fixed;
-  bottom: 1.5rem;
-  left: 1.5rem;
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  gap: .6rem;
-  padding: .7rem 1.1rem;
-  background: linear-gradient(135deg, var(--purple), #5a4fb0);
-  border: none;
-  border-radius: 50px;
-  color: white;
-  font-family: 'Inter', sans-serif;
-  font-size: .82rem;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: none;
-  box-shadow: 0 4px 20px rgba(124,111,205,.4);
-  transition: all .2s;
-}
-.btn-ssp-test:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(124,111,205,.6);
-}
-.btn-ssp-test .test-emoji { font-size: 1rem; }
-.btn-ssp-test .test-text { line-height: 1.2; }
-.btn-ssp-test .test-sub { font-size: .68rem; font-weight: 400; opacity: .8; display: block; }
-
-
-/* ── RESPONSIVE MOBILE ── */
-@media (max-width: 768px) {
-
-  /* Sidebar oculto en móvil */
-  .sidebar { display: none; }
-  .main { margin-left: 0; padding: 1rem; max-width: 100%; }
-
-  /* Topbar */
-  .topbar { padding: 0 1rem; }
-  .topbar-logo { font-size: 1.1rem; }
-  .user-name { display: none; }
-
-  /* Stage card */
-  .stage-card { padding: 1.25rem; border-radius: 12px; }
-  .stage-title { font-size: 1.4rem; }
-  .stage-prompt { font-size: .85rem; }
-
-  /* Fields */
-  .field-input { font-size: 1rem; padding: .9rem; }
-
-  /* Photo zone */
-  .photo-zone { padding: 1.5rem 1rem; }
-  .photo-placeholder .icon { font-size: 2rem; }
-
-  /* Buttons — más grandes para dedos */
-  .btn-ai { padding: 1rem; font-size: .95rem; min-height: 52px; }
-  .btn-nav { padding: .85rem 1.2rem; font-size: .9rem; min-height: 48px; }
-  .btn-save, .btn-confirm { min-height: 52px; }
-
-  /* Stage nav */
-  .stage-nav { gap: .5rem; }
-  .btn-prev, .btn-next { flex: 1; text-align: center; }
-
-  /* Historia stage — apilar verticalmente */
-  .historia-body {
-    grid-template-columns: 1fr;
-    gap: .75rem;
-  }
-  .historia-foto-zone {
-    flex-direction: row;
-    align-items: center;
-    gap: .75rem;
-  }
-  .historia-foto-upload {
-    width: 80px;
-    height: 105px;
-    flex-shrink: 0;
-  }
-  .historia-foto-label { text-align: left; }
-  .historia-texto textarea { min-height: 80px; font-size: .95rem; }
-  .historia-ejemplo { margin: .5rem .75rem; }
-  .historia-parte-header { padding: .85rem 1rem .6rem; }
-
-  /* Causal stage */
-  .causal-foto-preview { max-height: 220px; }
-  .causal-field { padding: 1rem; }
-
-  /* AI result */
-  .ai-result-text { font-size: .9rem; }
-
-  /* Segment options */
-  .segment-option { padding: .85rem; font-size: .85rem; }
-  .accionador-item { padding: .85rem; }
-
-  /* WOW cards */
-  .wow-card { padding: 1rem; }
-
-  /* Floating button — más compacto */
-  .btn-ssp-test {
-    bottom: 1rem;
-    left: 1rem;
-    padding: .6rem .9rem;
-    font-size: .75rem;
-  }
-  .btn-ssp-test .test-sub { display: none; }
-
-  /* Progress bar */
-  .progress-bar { margin-bottom: 1.25rem; }
-
-  /* Summary */
-  .summary-card { padding: 1.25rem; }
-  .summary-title { font-size: 1.5rem; }
-
-  /* Toast — arriba en móvil para no tapar botones */
-  .toast {
-    bottom: auto;
-    top: 70px;
-    right: 1rem;
-    left: 1rem;
-    text-align: center;
-  }
-
-  /* Juego cards grid */
-  .juego-cards-grid { grid-template-columns: repeat(4, 1fr); max-height: 220px; }
-}
-
-@media (max-width: 400px) {
-  .stage-title { font-size: 1.2rem; }
-  .historia-foto-upload { width: 70px; height: 90px; }
-  .juego-cards-grid { grid-template-columns: repeat(3, 1fr); }
-  .btn-ai { font-size: .88rem; }
-}
-
-
-/* ── AUTH SCREEN ── */
-#auth-screen {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: radial-gradient(ellipse at 30% 50%, rgba(78,204,163,.06) 0%, transparent 60%),
-              radial-gradient(ellipse at 70% 20%, rgba(124,111,205,.08) 0%, transparent 50%),
-              var(--bg);
-  padding: 2rem;
-}
-.auth-card {
-  max-width: 420px;
-  width: 100%;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 2.5rem 2rem;
-  text-align: center;
-}
-.auth-logo {
-  font-family: 'Fraunces', serif;
-  font-size: 2.5rem;
-  font-weight: 900;
-  color: var(--jade);
-  letter-spacing: -1px;
-  line-height: 1;
-  margin-bottom: .25rem;
-}
-.auth-logo span { color: var(--orange); }
-.auth-event {
-  font-size: .72rem;
-  letter-spacing: .2em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 2rem;
-}
-.auth-headline {
-  font-family: 'Fraunces', serif;
-  font-size: 1.4rem;
-  font-weight: 300;
-  font-style: italic;
-  color: var(--text);
-  margin-bottom: .5rem;
-  line-height: 1.3;
-}
-.auth-desc {
-  font-size: .82rem;
-  color: var(--muted);
-  margin-bottom: 2rem;
-  line-height: 1.5;
-}
-.auth-field {
-  margin-bottom: 1rem;
-  text-align: left;
-}
-.auth-field label {
-  display: block;
-  font-size: .72rem;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--jade);
-  margin-bottom: .4rem;
-}
-.auth-field input {
-  width: 100%;
-  background: var(--surface2);
-  border: 1.5px solid var(--border);
-  border-radius: 10px;
-  padding: .85rem 1rem;
-  color: var(--text);
-  font-family: 'Inter', sans-serif;
-  font-size: .95rem;
-  outline: none;
-  transition: border-color .2s;
-}
-.auth-field input:focus { border-color: var(--jade); }
-.auth-field input::placeholder { color: var(--muted); opacity: .5; }
-.btn-auth {
-  width: 100%;
-  padding: 1rem;
-  background: linear-gradient(135deg, var(--jade), #38b590);
-  border: none;
-  border-radius: 10px;
-  color: var(--bg);
-  font-family: 'Inter', sans-serif;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all .2s;
-  margin-top: .5rem;
-}
-.btn-auth:hover { opacity: .9; transform: translateY(-1px); }
-.btn-auth:disabled { opacity: .4; cursor: not-allowed; transform: none; }
-.auth-error {
-  display: none;
-  background: var(--orange-dim);
-  border: 1px solid rgba(255,107,53,.3);
-  border-radius: 8px;
-  padding: .75rem 1rem;
-  font-size: .82rem;
-  color: var(--orange);
-  margin-top: .75rem;
-  text-align: left;
-}
-.auth-error.visible { display: block; }
-.auth-note {
-  font-size: .72rem;
-  color: var(--muted);
-  opacity: .6;
-  margin-top: 1.25rem;
-  line-height: 1.5;
-}
-
 </style>
+</head>
+<body>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">SSP<span>.</span></div>
+    <div class="auth-event">Business World Cup · Guatemala 2026</div>
+    <div class="auth-headline">Bienvenido al<br>Innovation Journey</div>
+    <p class="auth-desc">Ingresa tu email y el código de acceso que te dio el facilitador para comenzar tu proceso.</p>
+    <div class="auth-field">
+      <label>Tu email</label>
+      <input type="email" id="auth-email" placeholder="nombre@email.com">
+    </div>
+    <div class="auth-field">
+      <label>Código de acceso</label>
+      <input type="text" id="auth-code" placeholder="Código del taller" style="text-transform:uppercase;letter-spacing:.15em;">
+    </div>
+    <button class="btn-auth" id="btn-auth">Entrar al Journey →</button>
+    <div class="auth-error" id="auth-error"></div>
+    <p class="auth-note">Tu progreso se guarda automáticamente. Puedes retomar desde cualquier dispositivo durante 7 días.</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div>
+      <span class="topbar-logo">Smart Serious Play<span>.</span></span>
+      <span class="topbar-sub">Life is a Game</span>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="user-display"></span>
+      <button class="btn-logout" id="btn-logout">Salir</button>
+    </div>
+  </div>
+
+  <div class="app-body">
+    <aside class="sidebar">
+      <div class="sidebar-title">Tu Journey</div>
+      <div id="sidebar-nav"></div>
+    </aside>
+    <main class="main">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      <div id="stage-view"></div>
+    </main>
+  </div>
+
+  <a class="btn-float" href="https://azuniga09.github.io/ssp-test" target="_blank">
+    <span>🎮</span>
+    <span><span style="display:block">¿Qué jugador eres?</span><span class="btn-float-sub">Test SSP Player</span></span>
+  </a>
+</div>
+
+<div class="toast" id="toast"></div>
+
 <script>
-
-// ── FIREBASE CONFIG ──
-const firebaseConfig = {
+// ── FIREBASE ──
+firebase.initializeApp({
   apiKey: "AIzaSyA3C75IlZRYlry0CVyH2kkyVSbCHc-K6T0",
   authDomain: "smart-serious-play-test.firebaseapp.com",
   databaseURL: "https://smart-serious-play-test-default-rtdb.firebaseio.com",
@@ -621,1426 +307,591 @@ const firebaseConfig = {
   storageBucket: "smart-serious-play-test.firebasestorage.app",
   messagingSenderId: "197500322718",
   appId: "1:197500322718:web:8ebe4ec27be1fbc8d10c8f"
-};
+});
+const DB = firebase.database();
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-// ── ACCESS CODE ──
+// ── CONFIG ──
 const ACCESS_CODE = 'BWC2026';
+const PROXY_URL = 'https://anthropicproxy-z4dcljw5oa-uc.a.run.app';
 const SESSION_DAYS = 7;
 
-let currentUserEmail = null;
+// ── STATE ──
+let userEmail = null;
+let currentStage = 0;
+let journeyData = {};
+let historiaPhotos = {};
+let causalPhoto = null;
 
-// ── INIT ──
-window.addEventListener('load', () => {
-  const savedEmail = localStorage.getItem('ssp_email');
-  const savedExpiry = localStorage.getItem('ssp_expiry');
-  
-  if (savedEmail && savedExpiry && Date.now() < parseInt(savedExpiry)) {
-    currentUserEmail = savedEmail;
-    loadFromFirebase().then(() => startApp());
-  } else {
-    // Show auth screen
-    const auth = document.getElementById('auth-screen');
-    if (auth) auth.style.display = 'flex';
-  }
-});
-
-// ── AUTH ──
-window.doAuth = async () => {
-  const email = document.getElementById('auth-email').value.trim().toLowerCase();
-  const code = document.getElementById('auth-code').value.trim().toUpperCase();
-  const btn = document.getElementById('btn-auth');
-  const error = document.getElementById('auth-error');
-  
-  error.classList.remove('visible');
-  
-  if (!email || !email.includes('@')) {
-    error.textContent = 'Ingresa un email válido.';
-    error.classList.add('visible');
-    return;
-  }
-  
-  if (code !== ACCESS_CODE) {
-    error.textContent = 'Código incorrecto. Verifica con tu facilitador.';
-    error.classList.add('visible');
-    return;
-  }
-  
-  btn.disabled = true;
-  btn.textContent = 'Verificando...';
-  
-  // Save session
-  const expiry = Date.now() + (SESSION_DAYS * 24 * 60 * 60 * 1000);
-  localStorage.setItem('ssp_email', email);
-  localStorage.setItem('ssp_expiry', expiry.toString());
-  currentUserEmail = email;
-  
-  await loadFromFirebase();
-  startApp();
-};
-
-// Allow Enter key on auth fields
-document.addEventListener('DOMContentLoaded', () => {
-  ['auth-email', 'auth-code'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') doAuth(); });
-  });
-});
-
-function startApp() {
-  document.getElementById('auth-screen').style.display = 'none';
-  document.querySelector('.topbar').style.display = 'flex';
-  document.querySelector('.app-layout').style.display = 'flex';
-  document.querySelector('.btn-ssp-test').style.display = 'flex';
-  
-  // Show email in topbar
-  const nameEl = document.getElementById('user-name-display');
-  if (nameEl) nameEl.textContent = currentUserEmail.split('@')[0];
-  
-  renderSidebar();
-  renderStage(currentStage);
-}
-
-// ── FIREBASE SAVE/LOAD ──
-function emailToKey(email) {
-  return email.replace(/\./g, '_').replace(/@/g, '_at_');
-}
-
-async function loadFromFirebase() {
-  try {
-    const key = emailToKey(currentUserEmail);
-    const snap = await db.ref('journeys_guatemala/' + key).once('value');
-    if (snap.exists()) {
-      const data = snap.val();
-      journeyData = data.stages || {};
-      currentStage = data.currentStage || 0;
-      // Restore to localStorage too
-      localStorage.setItem('ssp_journey', JSON.stringify(journeyData));
-    } else {
-      // Load from localStorage if exists
-      const local = localStorage.getItem('ssp_journey');
-      if (local) journeyData = JSON.parse(local);
-    }
-  } catch(e) {
-    console.warn('Firebase load failed, using localStorage', e);
-    const local = localStorage.getItem('ssp_journey');
-    if (local) journeyData = JSON.parse(local);
-  }
-}
-
-// Override saveLocal to also save to Firebase
-const _origSaveLocal = window.saveLocal || saveLocal;
-function saveLocal() {
-  // Save to localStorage (without photos - too large)
-  const toSave = {};
-  Object.keys(journeyData).forEach(k => {
-    toSave[k] = {...journeyData[k]};
-    // Remove large base64 images from localStorage
-    Object.keys(toSave[k]).forEach(field => {
-      if (typeof toSave[k][field] === 'string' && toSave[k][field].startsWith('data:image')) {
-        delete toSave[k][field];
-      }
-    });
-  });
-  try { localStorage.setItem('ssp_journey', JSON.stringify(toSave)); } catch(e) {}
-  
-  // Save to Firebase
-  if (currentUserEmail) {
-    const key = emailToKey(currentUserEmail);
-    const expiry = Date.now() + (SESSION_DAYS * 24 * 60 * 60 * 1000);
-    db.ref('journeys_guatemala/' + key).set({
-      email: currentUserEmail,
-      currentStage: currentStage,
-      stages: toSave,
-      updatedAt: Date.now(),
-      expiresAt: expiry
-    }).catch(e => console.warn('Firebase save failed', e));
-  }
-}
-
-// ── LOGOUT ──
-document.getElementById('btn-logout') && document.getElementById('btn-logout').addEventListener('click', () => {
-  if (confirm('¿Salir? Tu progreso está guardado y puedes regresar con tu email y código.')) {
-    localStorage.removeItem('ssp_email');
-    localStorage.removeItem('ssp_expiry');
-    currentUserEmail = null;
-    journeyData = {};
-    currentStage = 0;
-    document.getElementById('auth-screen').style.display = 'flex';
-    document.querySelector('.topbar').style.display = 'none';
-    document.querySelector('.app-layout').style.display = 'none';
-  }
-});
-
-
-
-
+// ── STAGES ──
 const STAGES = [
-  {
-    id:'producto', num:1, title:'Descripción del Producto', mode:'texto',
-    prompt:'Describe tu producto o servicio. ¿Qué es, qué hace, cómo funciona? Sé específico — esta información alimentará todo tu proceso de innovación.',
-    fields:[
-      {key:'nombre', label:'Nombre de tu producto o servicio', placeholder:'Ej: Plataforma de gestión para restaurantes...', rows:2},
-      {key:'descripcion', label:'¿Qué hace y cómo funciona?', placeholder:'Describe en detalle qué problema resuelve y cómo lo resuelve...', rows:4},
-      {key:'diferencia', label:'¿Qué lo hace diferente a lo que ya existe?', placeholder:'Tu ventaja o característica única...', rows:3},
-    ]
-  },
-  {
-    id:'segmento_logico', num:2, title:'Segmento de Mercado Lógico', mode:'texto',
-    prompt:'¿A quién crees que va dirigido tu producto? Describe a ese cliente "obvio" — el que todos esperarían que te comprara.',
-    fields:[
-      {key:'quien', label:'¿Quién es tu cliente lógico?', placeholder:'Describe a esa persona: qué hace, dónde está, qué necesita...', rows:3},
-      {key:'necesidad', label:'¿Cuál es su necesidad obvia?', placeholder:'El problema evidente que tu producto resuelve para ellos...', rows:3},
-      {key:'porque', label:'¿Por qué crees que te compraría?', placeholder:'La razón lógica por la que elegiría tu producto...', rows:3},
-    ]
-  },
-  {
-    id:'segmento_revelado', num:3, title:'Segmento de Mercado Revelado', mode:'foto_ia',
-    prompt:'Elige una o varias cartas SSP que evoquen a tu cliente real. Fotografía las cartas y responde las preguntas — la IA descubrirá tu segmento revelado.',
-    photoLabel:'📸 Sube la foto de tus cartas SSP elegidas',
-    questions:[
-      {key:'q1', label:'¿Qué hace tu cliente en su día a día?', placeholder:'Describe su rutina, contexto, entorno...', rows:2},
-      {key:'q2', label:'¿Qué emoción vive frecuentemente con el problema que resuelves?', placeholder:'Ansiedad, frustración, esperanza, confusión...', rows:2},
-      {key:'q3', label:'¿Qué ha intentado antes y no le ha funcionado?', placeholder:'Soluciones anteriores que no resolvieron su problema...', rows:2},
-      {key:'q4', label:'¿Qué cambio desea lograr si tu producto realmente funciona?', placeholder:'El sueño que tiene, la transformación que busca...', rows:2},
-    ],
-    aiButton:'✦ Descubrir mi Segmento Revelado',
-    outputMode:'segmentos'
-  },
-  {
-    id:'historia', num:4, title:'Historia Fantasiosa → Dolores, Insights y Accionadores', mode:'historia',
-    prompt:'Con tus cartas SSP físicas construye una historia fantástica de tu cliente. Sube la foto de las cartas que elegiste para cada parte y escribe tu versión. La IA la transformará en una historia emotiva y extraerá tu mapa emocional.',
-    aiButton:'✦ Generar Historia y Mapa Emocional',
-    outputMode:'accionadores'
-  },
-  {
-    id:'modelo_causal', num:5, title:'Modelo Causal', mode:'causal',
-    prompt:'Llena la matriz física que te dio el facilitador. Valora los grados de causalidad entre tus 6 insights y accionadores. Luego fotografía tu matriz y registra el ganador.',
-  },
-  {
-    id:'factor_wow', num:6, title:'Propuesta de Valor y Factor WOW', mode:'solo_ia',
-    prompt:'Con todo tu proceso construido, la IA generará tu Propuesta de Valor y tu Factor WOW — ese elemento único e irrepetible que hará que tus clientes digan ¡WOW!',
-    aiButton:'✦ Generar mi Propuesta de Valor y Factor WOW',
-    outputMode:'wow'
-  },
+  {id:'producto', num:1, title:'Descripción del Producto', mode:'texto',
+   prompt:'Describe tu producto o servicio. Esta información es la base de todo tu proceso de innovación.',
+   fields:[
+     {key:'nombre', label:'Nombre de tu producto o servicio', ejemplo:'Ej: "Raíces Vivas — Artesanías mayas con identidad y propósito"', placeholder:'Nombre de tu emprendimiento...', rows:2},
+     {key:'descripcion', label:'¿Qué hace y cómo funciona?', ejemplo:'Ej: "Producimos textiles mayas tejidos a mano con técnicas ancestrales, vendemos directo al consumidor con la historia de cada artesana."', placeholder:'Describe en detalle qué problema resuelve...', rows:4},
+     {key:'diferencia', label:'¿Qué lo hace diferente a lo que ya existe?', ejemplo:'Ej: "Cada pieza lleva el nombre de la artesana que la tejió y el significado simbólico de sus colores."', placeholder:'Tu ventaja o característica única...', rows:3},
+   ]},
+  {id:'segmento_logico', num:2, title:'Segmento de Mercado Lógico', mode:'texto',
+   prompt:'¿A quién crees que va dirigido tu producto? Describe a ese cliente "obvio".',
+   fields:[
+     {key:'quien', label:'¿Quién es tu cliente lógico?', ejemplo:'Ej: "Turistas extranjeros de nivel medio-alto que visitan Guatemala buscando productos auténticos."', placeholder:'Describe a esa persona: qué hace, dónde está...', rows:3},
+     {key:'necesidad', label:'¿Cuál es su necesidad obvia?', ejemplo:'Ej: "Quieren llevarse algo genuinamente guatemalteco que no se vea igual a lo que venden en todos los mercados."', placeholder:'El problema evidente que tu producto resuelve...', rows:3},
+     {key:'porque', label:'¿Por qué crees que te compraría?', ejemplo:'Ej: "Porque cada pieza es única, tiene identidad real y cuenta una historia que el comprador puede compartir."', placeholder:'La razón lógica por la que elegiría tu producto...', rows:3},
+   ]},
+  {id:'segmento_revelado', num:3, title:'Segmento de Mercado Revelado', mode:'foto_ia',
+   prompt:'Elige una carta SSP que evoque a tu cliente REAL. Fotografíala y responde las preguntas.',
+   photoLabel:'📸 Sube la foto de tu carta SSP',
+   questions:[
+     {key:'q1', label:'¿Qué hace tu cliente en su día a día?', ejemplo:'Ej: "Viaja frecuentemente, trabaja en ambientes corporativos, consume contenido de culturas del mundo pero rara vez tiene contacto real con ellas."', placeholder:'Describe su rutina y contexto...', rows:2},
+     {key:'q2', label:'¿Qué emoción vive frecuentemente con el problema que resuelves?', ejemplo:'Ej: "Vacío de autenticidad. Siente que todo lo que consume es producido en serie y nada lo representa."', placeholder:'Ansiedad, frustración, nostalgia, vacío...', rows:2},
+     {key:'q3', label:'¿Qué ha intentado antes y no le ha funcionado?', ejemplo:'Ej: "Comprar en tiendas de diseño caras, traer recuerdos de viajes que terminan en una caja."', placeholder:'Soluciones anteriores que no resolvieron su problema...', rows:2},
+     {key:'q4', label:'¿Qué cambio desea lograr si tu producto realmente funciona?', ejemplo:'Ej: "Que lo que usa o decora su espacio refleje quién es y qué valora — no lo que todos tienen."', placeholder:'El sueño, la transformación que busca...', rows:2},
+   ],
+   aiBtn:'✦ Descubrir mi Segmento Revelado', outputMode:'revelacion'},
+  {id:'historia', num:4, title:'Historia Fantasiosa → Dolores, Insights y Accionadores', mode:'historia',
+   prompt:'Con tus cartas SSP físicas construye una historia fantástica de tu cliente. Sube la foto de las cartas elegidas para cada parte y escribe tu versión. La IA la transformará.',
+   aiBtn:'✦ Generar Historia y Mapa Emocional', outputMode:'accionadores'},
+  {id:'modelo_causal', num:5, title:'Modelo Causal', mode:'causal',
+   prompt:'Llena la matriz física que te dio el facilitador. Fotografíala y registra el accionador ganador.'},
+  {id:'factor_wow', num:6, title:'Propuesta de Valor y Factor WOW', mode:'solo_ia',
+   prompt:'Con todo tu proceso construido, la IA generará tu Propuesta de Valor y Factor WOW.',
+   aiBtn:'✦ Generar mi Propuesta de Valor y Factor WOW', outputMode:'wow'},
 ];
 
-let currentStage = 0;
-let journeyData = JSON.parse(localStorage.getItem('ssp_journey') || '{}');
-let photoBase64 = {};
+const HISTORIA_PARTES = [
+  {id:'personaje', emoji:'🧙', title:'El Personaje', ejemplo:'Ej: "Ixchel es una tejedora de memorias en el Reino de los Hilos Eternos, donde cada nudo que hace guarda el sueño de alguien que ya no está."', placeholder:'Dale un nombre fantástico a tu personaje y cuéntame quién es...'},
+  {id:'mundo', emoji:'🌍', title:'Su Mundo', ejemplo:'Ej: "Vive en un mercado flotante donde cada puesto cocina recuerdos en lugar de alimentos. Los aromas no son de especias sino de momentos."', placeholder:'¿Cómo es el lugar donde vive? ¿Qué reglas raras tiene ese mundo?...'},
+  {id:'sombra', emoji:'🌑', title:'La Sombra', ejemplo:'Ej: "Carga con la batalla silenciosa de ser guardiana de un conocimiento que el mundo moderno quiere reemplazar con máquinas."', placeholder:'¿Qué carga invisible arrastra? ¿Qué le pesa aunque nunca lo diga?...'},
+  {id:'obstaculo', emoji:'🐉', title:'El Obstáculo', ejemplo:'Ej: "Cada vez que lleva sus tejidos a la Gran Plaza, el mundo solo ve la foto bonita. Nadie se detiene a escuchar lo que los patrones dicen."', placeholder:'¿Qué monstruo o laberinto aparece siempre que intenta avanzar?...'},
+  {id:'deseo', emoji:'⭐', title:'El Deseo Secreto', ejemplo:'Ej: "En silencio sueña con el día en que su trabajo gire por el mundo de mano en mano, generación tras generación, sin perder su magia."', placeholder:'¿Qué sueña en silencio? ¿Qué pasaría si el obstáculo desapareciera?...'},
+];
 
-function saveLocal() {
-  const toSave = {};
-  Object.keys(journeyData).forEach(k => {
-    toSave[k] = {...journeyData[k]};
-    delete toSave[k].photoThumb; // thumbnails son muy grandes para localStorage
-  });
-  try { localStorage.setItem('ssp_journey', JSON.stringify(toSave)); } catch(e) {}
+// ── AUTH ──
+document.getElementById('btn-auth').addEventListener('click', doAuth);
+document.getElementById('auth-email').addEventListener('keydown', e => { if(e.key==='Enter') doAuth(); });
+document.getElementById('auth-code').addEventListener('keydown', e => { if(e.key==='Enter') doAuth(); });
+document.getElementById('btn-logout').addEventListener('click', doLogout);
+
+function doAuth() {
+  const email = document.getElementById('auth-email').value.trim().toLowerCase();
+  const code = document.getElementById('auth-code').value.trim().toUpperCase();
+  const err = document.getElementById('auth-error');
+  err.classList.remove('visible');
+
+  if (!email || !email.includes('@')) {
+    err.textContent = 'Ingresa un email válido.';
+    err.classList.add('visible'); return;
+  }
+  if (code !== ACCESS_CODE) {
+    err.textContent = 'Código incorrecto. Verifica con tu facilitador.';
+    err.classList.add('visible'); return;
+  }
+
+  const btn = document.getElementById('btn-auth');
+  btn.disabled = true; btn.textContent = 'Cargando tu proceso...';
+
+  userEmail = email;
+  localStorage.setItem('ssp_email', email);
+  localStorage.setItem('ssp_expiry', Date.now() + SESSION_DAYS*24*60*60*1000);
+
+  loadFromDB().then(() => showApp());
 }
 
-window.resetJourney = () => {
-  if (!confirm('¿Reiniciar todo el proceso? Se perderán tus respuestas.')) return;
-  localStorage.removeItem('ssp_journey');
-  journeyData = {};
-  photoBase64 = {};
-  currentStage = 0;
-  renderSidebar();
-  renderStage(0);
-};
+function doLogout() {
+  if (!confirm('¿Salir? Tu progreso está guardado.')) return;
+  localStorage.removeItem('ssp_email');
+  localStorage.removeItem('ssp_expiry');
+  userEmail = null; journeyData = {}; currentStage = 0;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('auth-email').value = '';
+  document.getElementById('auth-code').value = '';
+  document.getElementById('btn-auth').disabled = false;
+  document.getElementById('btn-auth').textContent = 'Entrar al Journey →';
+}
+
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('user-display').textContent = userEmail.split('@')[0];
+  renderSidebar(); renderStage(currentStage);
+}
+
+// ── DB ──
+function emailKey(email) { return email.replace(/\./g,'_').replace(/@/g,'_at_'); }
+
+async function loadFromDB() {
+  try {
+    const snap = await DB.ref('bwc2026/' + emailKey(userEmail)).once('value');
+    if (snap.exists()) {
+      const d = snap.val();
+      journeyData = d.stages || {};
+      currentStage = d.currentStage || 0;
+    }
+  } catch(e) { console.warn('DB load failed', e); }
+}
+
+function saveToDB() {
+  if (!userEmail) return;
+  const clean = {};
+  Object.keys(journeyData).forEach(k => {
+    clean[k] = {};
+    Object.keys(journeyData[k]).forEach(f => {
+      const v = journeyData[k][f];
+      if (typeof v === 'string' && v.startsWith('data:image')) return; // skip base64
+      clean[k][f] = v;
+    });
+  });
+  DB.ref('bwc2026/' + emailKey(userEmail)).set({
+    email: userEmail, currentStage, stages: clean,
+    updatedAt: Date.now(),
+    expiresAt: Date.now() + SESSION_DAYS*24*60*60*1000
+  }).catch(e => console.warn('DB save failed', e));
+}
+
+// ── INIT ──
+(function init() {
+  const email = localStorage.getItem('ssp_email');
+  const expiry = localStorage.getItem('ssp_expiry');
+  if (email && expiry && Date.now() < parseInt(expiry)) {
+    userEmail = email;
+    loadFromDB().then(() => showApp());
+  }
+})();
 
 // ── SIDEBAR ──
 function renderSidebar() {
-  const nav = document.getElementById('stage-nav-list');
-  const allDone = STAGES.every(s => journeyData[s.id]?.completed);
-  nav.innerHTML = STAGES.map((s, i) => {
-    const done = journeyData[s.id]?.completed;
-    const active = i === currentStage;
-    return `<div class="stage-item ${active?'active':''} ${done&&!active?'completed':''}" onclick="goToStage(${i})">
-      <div class="stage-num">${done&&!active?'✓':i+1}</div>
-      <div class="stage-label">${s.title}</div>
-    </div>`;
-  }).join('') + (allDone ? `
-    <div class="stage-item" onclick="showSummary()" style="margin-top:.5rem">
-      <div class="stage-num" style="border-color:var(--orange);color:var(--orange)">★</div>
-      <div class="stage-label" style="color:var(--orange)">Ver mi Proceso Completo</div>
-    </div>` : '');
+  const completed = STAGES.filter(s => journeyData[s.id]?.completed).length;
+  document.getElementById('progress-fill').style.width = Math.round(completed/STAGES.length*100) + '%';
+  const allDone = completed === STAGES.length;
+  document.getElementById('sidebar-nav').innerHTML =
+    STAGES.map((s,i) => {
+      const done = journeyData[s.id]?.completed;
+      const active = i === currentStage;
+      return '<div class="stage-item ' + (active?'active':'') + ' ' + (done&&!active?'completed':'') + '" onclick="goTo(' + i + ')">' +
+        '<div class="stage-num">' + (done&&!active?'✓':i+1) + '</div>' +
+        '<div class="stage-label">' + s.title + '</div></div>';
+    }).join('') +
+    (allDone ? '<div class="stage-item" onclick="showSummary()" style="margin-top:.5rem"><div class="stage-num" style="border-color:var(--orange);color:var(--orange)">★</div><div class="stage-label" style="color:var(--orange)">Ver mi Proceso</div></div>' : '');
 }
 
-window.goToStage = (i) => { currentStage = i; renderSidebar(); renderStage(i); };
+window.goTo = (i) => { currentStage = i; renderSidebar(); renderStage(i); };
 
 // ── RENDER STAGE ──
 function renderStage(idx) {
   if (idx >= STAGES.length) { showSummary(); return; }
-  const stage = STAGES[idx];
-  const saved = journeyData[stage.id] || {};
-  const completed = STAGES.filter(s => journeyData[s.id]?.completed).length;
-  document.getElementById('progress-fill').style.width = Math.round((completed/STAGES.length)*100) + '%';
+  const s = STAGES[idx];
+  const saved = journeyData[s.id] || {};
+  let html = '<div class="stage-card"><div class="stage-eyebrow">Etapa ' + s.num + ' de ' + STAGES.length + '</div>' +
+    '<div class="stage-title">' + s.title + '</div><p class="stage-prompt">' + s.prompt + '</p>';
 
-  let html = `<div class="stage-card">
-    <div class="stage-eyebrow">Etapa ${stage.num} de ${STAGES.length}</div>
-    <div class="stage-title">${stage.title}</div>
-    <p class="stage-prompt">${stage.prompt}</p>`;
+  if (s.mode === 'texto') html += renderTexto(s, saved) + '<button class="btn-primary btn-purple" onclick="saveTexto(\'' + s.id + '\')">✓ Guardar y continuar</button>';
+  if (s.mode === 'foto_ia') html += renderFotoIA(s, saved);
+  if (s.mode === 'historia') html += renderHistoria(saved);
+  if (s.mode === 'causal') html += renderCausal(saved) + '<button class="btn-primary btn-purple" onclick="saveCausal()">✓ Guardar Modelo Causal</button>';
+  if (s.mode === 'solo_ia') html += '<button class="btn-primary" id="btn-ai-' + s.id + '" onclick="runAI(\'' + s.id + '\')">' + s.aiBtn + '</button><button class="btn-secondary ' + (saved.aiResult?'visible':'') + '" onclick="regenAI(\'' + s.id + '\')">↺ Regenerar</button>';
 
-  if (stage.mode === 'texto') {
-    html += stage.fields.map(f => `
-      <div class="field-group">
-        <label class="field-label">${f.label}</label>
-        <textarea class="field-input" id="field-${f.key}" rows="${f.rows}" placeholder="${f.placeholder}">${saved[f.key]||''}</textarea>
-      </div>`).join('');
-    html += `<button class="btn-ai btn-save" onclick="saveTextStage('${stage.id}')">✓ Guardar y continuar</button>`;
+  if (s.mode === 'foto_ia' || s.mode === 'historia') {
+    html += '<button class="btn-primary" id="btn-ai-' + s.id + '" onclick="runAI(\'' + s.id + '\')">' + s.aiBtn + '</button>' +
+      '<button class="btn-secondary ' + (saved.aiResult?'visible':'') + '" id="btn-regen-' + s.id + '" onclick="regenAI(\'' + s.id + '\')">↺ Regenerar</button>';
   }
 
-  if (stage.mode === 'foto_ia') {
-    html += `<div class="photo-zone ${saved.photoThumb?'has-image':''}" id="photo-zone-${stage.id}">
-      <input type="file" accept="image/*" id="photo-input-${stage.id}" capture="environment">
-      <img class="photo-preview ${saved.photoThumb?'visible':''}" id="photo-preview-${stage.id}" src="${saved.photoThumb||''}" alt="">
-      <div class="photo-placeholder"><span class="icon">📸</span>${stage.photoLabel}</div>
-      <div class="photo-change">Toca para cambiar la foto</div>
-    </div>`;
-    html += stage.questions.map(q => `
-      <div class="field-group">
-        <label class="field-label">${q.label}</label>
-        <textarea class="field-input" id="q-${q.key}" rows="${q.rows}" placeholder="${q.placeholder}">${saved[q.key]||''}</textarea>
-      </div>`).join('');
-  }
-
-  if (stage.mode === 'historia') {
-    html += renderHistoriaStage(saved);
-  }
-
-  if (stage.mode === 'causal') {
-    html += renderCausalStage(saved);
-    html += `<button class="btn-ai" style="background:linear-gradient(135deg,var(--purple),#6058b0)" onclick="saveCausalStage()">✓ Guardar Modelo Causal</button>`;
-  }
-
-  if (stage.mode === 'foto_ia' || stage.mode === 'solo_ia' || stage.mode === 'juego' || stage.mode === 'historia' || stage.mode === 'causal') {
-    html += `<button class="btn-ai" id="btn-ai-${stage.id}" onclick="runAI('${stage.id}')">${stage.aiButton}</button>
-    <button class="btn-regenerate ${saved.aiResult?'visible':''}" id="btn-regen-${stage.id}" onclick="regenAI('${stage.id}')">↺ Regenerar respuesta</button>`;
-    html += renderAIResult(stage, saved);
-  }
-
-  if (saved.completed) {
-    html += `<div class="accepted-box visible">
-      <div class="accepted-label">✓ Etapa completada</div>
-      <div class="accepted-text">${saved.completedSummary||''}</div>
-    </div>`;
-  }
-
-  html += `</div>
-  <div class="stage-nav">
-    <button class="btn-nav btn-prev" onclick="prevStage()" ${idx===0?'disabled':''}>← Anterior</button>
-    <button class="btn-nav btn-next" id="btn-next" onclick="nextStage()" ${!saved.completed?'disabled':''}>
-      ${idx===STAGES.length-1?'Ver mi proceso →':'Siguiente →'}
-    </button>
-  </div>`;
+  html += renderAIResult(s, saved);
+  if (saved.completed) html += '<div class="accepted-box visible"><div class="accepted-label">✓ Etapa completada</div><div class="accepted-text">' + (saved.completedSummary||'') + '</div></div>';
+  html += '</div>';
+  html += '<div class="stage-nav"><button class="btn-nav btn-prev" onclick="prevStage()" ' + (idx===0?'disabled':'') + '>← Anterior</button>' +
+    '<button class="btn-nav btn-next" id="btn-next" onclick="nextStage()" ' + (!saved.completed?'disabled':'') + '>' + (idx===STAGES.length-1?'Ver mi proceso →':'Siguiente →') + '</button></div>';
 
   document.getElementById('stage-view').innerHTML = html;
-  initPhoto(stage, saved);
+  initPhotoZones(s, saved);
 }
 
-function renderAIResult(stage, saved) {
-  if (!saved.aiResult) return `<div class="ai-result" id="ai-result-${stage.id}"></div>`;
+function renderTexto(s, saved) {
+  return s.fields.map(f =>
+    '<div class="field-group"><label class="field-label">' + f.label + '</label>' +
+    '<div class="field-ejemplo">💡 ' + f.ejemplo + '</div>' +
+    '<textarea class="field-input" id="f-' + f.key + '" rows="' + f.rows + '" placeholder="' + f.placeholder + '">' + (saved[f.key]||'') + '</textarea></div>'
+  ).join('');
+}
 
-  let inner = `<div class="ai-result-box">
-    <div class="ai-result-eyebrow">✦ Resultado generado</div>
-    <div class="ai-result-text">${saved.aiResult}</div>
-  </div>`;
+function renderFotoIA(s, saved) {
+  return '<div class="photo-zone ' + (saved.photoThumb?'has-img':'') + '" id="photo-zone">' +
+    '<input type="file" accept="image/*" capture="environment" id="photo-input">' +
+    '<img src="' + (saved.photoThumb||'') + '" id="photo-preview" alt="">' +
+    '<div class="photo-ph"><span class="icon">📸</span>' + s.photoLabel + '</div>' +
+    '<div class="photo-change">✓ Foto cargada · toca para cambiar</div></div>' +
+    s.questions.map(q =>
+      '<div class="field-group"><label class="field-label">' + q.label + '</label>' +
+      '<div class="field-ejemplo">💡 ' + q.ejemplo + '</div>' +
+      '<textarea class="field-input" id="q-' + q.key + '" rows="' + q.rows + '" placeholder="' + q.placeholder + '">' + (saved[q.key]||'') + '</textarea></div>'
+    ).join('');
+}
 
-  if (stage.outputMode === 'segmentos') {
-    // Show revelacion WOW
+function renderHistoria(saved) {
+  return HISTORIA_PARTES.map(p =>
+    '<div class="historia-parte">' +
+    '<div class="historia-header"><span class="historia-emoji">' + p.emoji + '</span><span class="historia-title">' + p.title + '</span></div>' +
+    '<div class="historia-ejemplo">💡 ' + p.ejemplo + '</div>' +
+    '<div class="historia-body">' +
+    '<div class="historia-foto"><div class="hfoto-zone ' + (saved['foto_'+p.id]?'has-img':'') + '" id="hf-' + p.id + '">' +
+    '<input type="file" accept="image/*" capture="environment" onchange="historiaFoto(event,\'' + p.id + '\')">' +
+    '<img src="' + (saved['foto_'+p.id]||'') + '" id="hfi-' + p.id + '" alt="">' +
+    '<div class="hfoto-ph"><span>📸</span><span>Tu carta</span></div></div>' +
+    '<div style="font-size:.62rem;color:var(--muted);text-align:center">' + (saved['foto_'+p.id]?'✓ Guardada':'Sube tu carta') + '</div></div>' +
+    '<div class="historia-texto"><textarea id="ht-' + p.id + '" placeholder="' + p.placeholder + '">' + (saved['texto_'+p.id]||'') + '</textarea></div>' +
+    '</div></div>'
+  ).join('');
+}
+
+function renderCausal(saved) {
+  return '<div class="photo-zone ' + (saved.matrizFoto?'has-img':'') + '" id="causal-foto-zone" style="margin-bottom:1rem">' +
+    '<input type="file" accept="image/*" capture="environment" id="causal-foto-input">' +
+    '<img src="' + (saved.matrizFoto||'') + '" id="causal-foto-preview" alt="">' +
+    '<div class="photo-ph"><span class="icon">📸</span>Sube la foto de tu matriz causal llena</div>' +
+    '<div class="photo-change">✓ Matriz cargada · toca para cambiar</div></div>' +
+    '<div class="causal-field"><div class="causal-header"><span class="causal-emoji">🏆</span><span class="causal-title">Accionador con mayor grado de conectividad</span></div>' +
+    '<div class="field-ejemplo">💡 Ej: "Crear rituales de cocina participativos donde los clientes cocinen junto a cocineros tradicionistas"</div>' +
+    '<textarea class="field-input" id="causal-ganador" rows="3" placeholder="El accionador que tuvo más conexiones en tu matriz...">' + (saved.ganador||'') + '</textarea></div>' +
+    '<div class="causal-field"><div class="causal-header"><span class="causal-emoji">🎯</span><span class="causal-title">Variable que representa tu Propuesta de Valor</span></div>' +
+    '<div class="field-ejemplo">💡 Ej: "La experiencia de reconectar con tu identidad y tus raíces a través del sabor y la memoria"</div>' +
+    '<textarea class="field-input" id="causal-propuesta" rows="3" placeholder="¿Qué variable o concepto central emerge de ese accionador?">' + (saved.propuesta_variable||'') + '</textarea></div>';
+}
+
+function renderAIResult(s, saved) {
+  if (!saved.aiResult) return '<div class="ai-result" id="ai-result-' + s.id + '"></div>';
+  let html = '<div class="ai-result visible" id="ai-result-' + s.id + '">';
+
+  if (s.outputMode === 'revelacion') {
     if (saved.revelacion) {
-      inner += '<div style="background:rgba(78,204,163,.08);border:1.5px solid rgba(78,204,163,.3);border-radius:12px;padding:1.25rem;margin-bottom:1rem">' +
-        '<div style="font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--jade);margin-bottom:.75rem">🎯 Tu cliente real es...</div>' +
-        '<div style="font-family:Fraunces,serif;font-size:1.05rem;font-weight:300;line-height:1.8;color:var(--text)">' + saved.revelacion + '</div>' +
-        '</div>';
+      html += '<div class="revelacion-box"><div class="revelacion-label">🎯 Tu cliente real es...</div><div class="revelacion-text">' + saved.revelacion + '</div></div>';
     }
     if (saved.mensajes && saved.mensajes.length) {
-      inner += '<div class="segment-selector">' +
-        '<span class="segment-label">Elige el mensaje que más conecta con tu cliente:</span>' +
-        '<div class="segment-options">' +
-        saved.mensajes.map((m, i) => '<div class="segment-option ' + (saved.selectedSegment===i?'selected':'') + '" onclick="selectSegment(' + i + ')">' +
-          '<div class="segment-option-label">Mensaje ' + (i+1) + '</div>' +
-          '<div class="segment-message" style="font-size:1rem;color:var(--text);margin-top:.25rem">"' + m + '"</div>' +
-          '</div>').join('') +
-        '</div></div>';
+      html += '<span class="options-label">Elige el mensaje que más conecta:</span><div class="options-list">' +
+        saved.mensajes.map((m,i) => '<div class="option-item ' + (saved.selectedSegment===i?'selected':'') + '" onclick="selectMensaje(' + i + ')">' +
+          '<div class="option-label">Mensaje ' + (i+1) + '</div><div class="option-message">"' + m + '"</div></div>').join('') + '</div>';
     }
   }
 
-  if (stage.outputMode === 'accionadores' && saved.accionadores) {
-    const sel = saved.selectedAccionadores || [];
-    inner += `<div class="segment-selector">
-      <span class="segment-label">Elige máximo 6 que más resuenan con tu realidad:</span>
-      <div class="accionadores-grid">
-        ${saved.accionadores.map((a, i) => `
-          <div class="accionador-item ${sel.includes(i)?'selected':''}" onclick="toggleAcc(${i})">
-            <div class="accionador-tipo">${a.tipo}</div>
-            <div class="accionador-nombre">${a.nombre}</div>
-            <div class="accionador-insight">💡 ${a.insight}</div>
-            <div class="accionador-accion">⚡ ${a.accionador}</div>
-          </div>`).join('')}
-      </div>
-      <div class="selection-count">Seleccionados: <span>${sel.length}</span> / 6</div>
-      ${sel.length > 0 ? `<button class="btn-ai btn-confirm" style="margin-top:1rem" onclick="confirmAcc()">✓ Confirmar mis ${sel.length} seleccionados</button>` : ''}
-    </div>`;
+  if (s.outputMode === 'accionadores') {
+    html += '<div class="ai-box"><div class="ai-eyebrow">📖 Historia generada</div><div class="ai-text">' + saved.aiResult.replace('HISTORIA\n\n','') + '</div></div>';
+    if (saved.accionadores && saved.accionadores.length) {
+      const sel = saved.selectedAcc || [];
+      html += '<span class="options-label">Elige máximo 6 que más resuenan:</span>' +
+        saved.accionadores.map((a,i) => '<div class="acc-item ' + (sel.includes(i)?'selected':'') + '" onclick="toggleAcc(' + i + ')">' +
+          '<div class="acc-tipo">' + a.tipo + '</div><div class="acc-nombre">' + a.nombre + '</div>' +
+          '<div class="acc-insight">💡 ' + a.insight + '</div><div class="acc-accion">⚡ ' + a.accionador + '</div></div>').join('') +
+        '<div class="acc-count">Seleccionados: <span>' + sel.length + '</span> / 6</div>' +
+        (sel.length > 0 ? '<button class="btn-primary btn-orange" style="margin-top:.75rem" onclick="confirmAcc()">✓ Confirmar mis ' + sel.length + ' seleccionados</button>' : '');
+    }
   }
 
-  if (stage.outputMode === 'wow' && saved.wowCards) {
-    inner += `<div class="wow-options">
-      ${saved.wowCards.map(w => `
-        <div class="wow-card ${w.tipo}">
-          <div class="wow-type">✨ Factor WOW ${w.tipo.toUpperCase()}</div>
-          <div class="wow-text">${w.texto}</div>
-          <div class="wow-moment">"${w.momento}"</div>
-        </div>`).join('')}
-    </div>
-    <button class="btn-ai btn-confirm" style="margin-top:1rem" onclick="acceptWOW()">✓ Este es mi Factor WOW</button>`;
+  if (s.outputMode === 'wow') {
+    html += '<div class="ai-box"><div class="ai-eyebrow">🎯 Propuesta de Valor</div><div class="ai-text">' + (saved.propuesta||'') + '</div></div>';
+    if (saved.wowCards) {
+      html += saved.wowCards.map(w => '<div class="wow-card ' + w.tipo + '"><div class="wow-type">✨ Factor WOW ' + w.tipo.toUpperCase() + '</div><div class="wow-text">' + w.texto + '</div><div class="wow-moment">"' + w.momento + '"</div></div>').join('');
+      html += '<button class="btn-primary btn-orange" style="margin-top:.75rem" onclick="acceptWOW()">✓ Este es mi Factor WOW</button>';
+    }
   }
 
-  return `<div class="ai-result visible" id="ai-result-${stage.id}">${inner}</div>`;
+  html += '</div>';
+  return html;
 }
 
-// ── PHOTO ──
-function initPhoto(stage, saved) {
-  const input = document.getElementById(`photo-input-${stage.id}`);
-  if (!input) return;
-  input.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+// ── PHOTO INIT ──
+function initPhotoZones(s, saved) {
+  const input = document.getElementById('photo-input');
+  if (input) {
+    input.addEventListener('change', async (e) => {
+      const b64 = await compressPhoto(e.target.files[0]);
+      if (!b64) return;
+      if (!journeyData[s.id]) journeyData[s.id] = {};
+      journeyData[s.id].photoThumb = 'data:image/jpeg;base64,' + b64;
+      journeyData[s.id].photoB64 = b64;
+      document.getElementById('photo-preview').src = 'data:image/jpeg;base64,' + b64;
+      document.getElementById('photo-zone').classList.add('has-img');
+      saveToDB(); showToast('📸 Foto guardada');
+    });
+  }
+  const causalInput = document.getElementById('causal-foto-input');
+  if (causalInput) {
+    causalInput.addEventListener('change', async (e) => {
+      const b64 = await compressPhoto(e.target.files[0]);
+      if (!b64) return;
+      causalPhoto = b64;
+      if (!journeyData['modelo_causal']) journeyData['modelo_causal'] = {};
+      journeyData['modelo_causal'].matrizFoto = 'data:image/jpeg;base64,' + b64;
+      document.getElementById('causal-foto-preview').src = 'data:image/jpeg;base64,' + b64;
+      document.getElementById('causal-foto-zone').classList.add('has-img');
+      saveToDB(); showToast('📸 Matriz guardada');
+    });
+  }
+}
+
+window.historiaFoto = async (event, parteId) => {
+  const b64 = await compressPhoto(event.target.files[0]);
+  if (!b64) return;
+  historiaPhotos[parteId] = b64;
+  if (!journeyData['historia']) journeyData['historia'] = {};
+  journeyData['historia']['foto_' + parteId] = 'data:image/jpeg;base64,' + b64;
+  const imgEl = document.getElementById('hfi-' + parteId);
+  const zone = document.getElementById('hf-' + parteId);
+  if (imgEl) { imgEl.src = 'data:image/jpeg;base64,' + b64; }
+  if (zone) zone.classList.add('has-img');
+  saveToDB(); showToast('📸 Carta guardada');
+};
+
+async function compressPhoto(file) {
+  if (!file) return null;
+  return new Promise(res => {
     const reader = new FileReader();
-    reader.onload = (ev) => {
-      const b64full = ev.target.result;
-      photoBase64[stage.id] = b64full.split(',')[1];
-      if (!journeyData[stage.id]) journeyData[stage.id] = {};
-      journeyData[stage.id].photoThumb = b64full;
-      const preview = document.getElementById(`photo-preview-${stage.id}`);
-      const zone = document.getElementById(`photo-zone-${stage.id}`);
-      if (preview) { preview.src = b64full; preview.classList.add('visible'); }
-      if (zone) zone.classList.add('has-image');
-      showToast('📸 Foto cargada');
+    reader.onload = async (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const scale = Math.min(1, 700 / Math.max(img.width, img.height));
+        canvas.width = Math.floor(img.width * scale);
+        canvas.height = Math.floor(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        res(canvas.toDataURL('image/jpeg', 0.65).split(',')[1]);
+      };
+      img.src = ev.target.result;
     };
     reader.readAsDataURL(file);
   });
 }
 
 // ── SAVE TEXT ──
-window.saveTextStage = (stageId) => {
-  const stage = STAGES.find(s => s.id === stageId);
+window.saveTexto = (stageId) => {
+  const s = STAGES.find(x => x.id === stageId);
   if (!journeyData[stageId]) journeyData[stageId] = {};
   let summary = '';
-  stage.fields.forEach(f => {
-    const el = document.getElementById(`field-${f.key}`);
-    if (el) { journeyData[stageId][f.key] = el.value.trim(); summary += `${f.label}:\n${el.value.trim()}\n\n`; }
+  s.fields.forEach(f => {
+    const el = document.getElementById('f-' + f.key);
+    if (el) { journeyData[stageId][f.key] = el.value.trim(); summary += f.label + ':\n' + el.value.trim() + '\n\n'; }
   });
   journeyData[stageId].completed = true;
   journeyData[stageId].completedSummary = summary.trim();
-  saveLocal();
-  document.getElementById('btn-next').disabled = false;
-  renderSidebar();
-  showToast('✓ Guardado');
+  saveToDB(); document.getElementById('btn-next').disabled = false;
+  renderSidebar(); showToast('✓ Guardado');
 };
 
-// ── RUN AI ──
+window.saveCausal = () => {
+  const ganador = document.getElementById('causal-ganador')?.value.trim();
+  const propuesta = document.getElementById('causal-propuesta')?.value.trim();
+  if (!ganador) { showToast('Escribe el accionador ganador'); return; }
+  if (!propuesta) { showToast('Escribe la propuesta de valor'); return; }
+  if (!journeyData['modelo_causal']) journeyData['modelo_causal'] = {};
+  journeyData['modelo_causal'].ganador = ganador;
+  journeyData['modelo_causal'].propuesta_variable = propuesta;
+  journeyData['modelo_causal'].completed = true;
+  journeyData['modelo_causal'].completedSummary = 'Accionador ganador: ' + ganador + '\n\nPropuesta de valor: ' + propuesta;
+  saveToDB(); document.getElementById('btn-next').disabled = false;
+  renderSidebar(); showToast('✓ Modelo causal guardado');
+};
+
+// ── AI ──
 window.runAI = async (stageId) => {
-  const stage = STAGES.find(s => s.id === stageId);
+  const s = STAGES.find(x => x.id === stageId);
   const saved = journeyData[stageId] || {};
-  const btn = document.getElementById(`btn-ai-${stageId}`);
-  const regen = document.getElementById(`btn-regen-${stageId}`);
+  const btn = document.getElementById('btn-ai-' + stageId);
+  const regen = document.getElementById('btn-regen-' + stageId);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Generando...'; }
 
-  if (stage.mode === 'foto_ia' && !photoBase64[stageId] && !saved.photoThumb) {
-    showToast('📸 Sube primero la foto de tus cartas'); return;
-  }
+  const e1 = journeyData['producto'] || {};
+  const e2 = journeyData['segmento_logico'] || {};
+  const e3 = journeyData['segmento_revelado'] || {};
+  const e4 = journeyData['historia'] || {};
+  const e5 = journeyData['modelo_causal'] || {};
 
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Generando...';
+  let systemPrompt = '';
+  let userContent = [];
 
   try {
-    const e1 = journeyData['producto'] || {};
-    const e2 = journeyData['segmento_logico'] || {};
-    const e3 = journeyData['segmento_revelado'] || {};
-    const e4 = journeyData['historia'] || {};
-    const e5 = journeyData['modelo_causal'] || {};
-
-    let systemPrompt = '';
-    let userContent = [];
-    const imgData = photoBase64[stageId];
-    const hasImg = !!imgData;
-
     if (stageId === 'segmento_revelado') {
-      const qs = stage.questions.map(q => {
-        const el = document.getElementById(`q-${q.key}`);
-        return `${q.label}: ${el?.value || saved[q.key] || ''}`;
-      }).join('\n');
+      const qs = s.questions.map(q => q.label + ': ' + (document.getElementById('q-'+q.key)?.value || saved[q.key] || '')).join('\n');
+      if (s.questions) s.questions.forEach(q => { const el = document.getElementById('q-'+q.key); if(el && !journeyData[stageId]) journeyData[stageId] = {}; if(el) journeyData[stageId][q.key] = el.value.trim(); });
 
       systemPrompt = [
-        'Eres un experto en segmentacion revelada y branding emocional profundo, especialista en la metodologia SSP (Smart Serious Play).',
-        'El emprendedor eligio cartas SSP fisicamente como detonador simbolico. Esa imagen es tu restriccion creativa — interpretala emocionalmente, nunca literalmente.',
-        'Contexto del emprendedor:',
-        '- Producto: ' + (e1.nombre||'') + ' — ' + (e1.descripcion||''),
-        '- Segmento logico (quien cree que es su cliente): ' + (e2.quien||''),
-        'Respuestas del emprendedor sobre su cliente real:',
-        qs,
-        'TU MISION:',
-        'Revelar quien es REALMENTE el cliente de este emprendedor — no con demografia sino con verdades emocionales profundas.',
-        'El resultado debe hacer que el emprendedor diga: WOW, ESE ES MI CLIENTE.',
+        'Eres un experto en segmentacion revelada y branding emocional profundo, especialista en SSP (Smart Serious Play).',
+        'El emprendedor eligio una carta SSP fisicamente. Esa imagen es tu restriccion creativa.',
+        'Contexto: Producto: ' + (e1.nombre||'') + ' — ' + (e1.descripcion||''),
+        'Segmento logico: ' + (e2.quien||''),
+        'Respuestas del emprendedor:\n' + qs,
+        'MISION: Revelar quien es REALMENTE el cliente. El resultado debe hacer que el emprendedor diga: WOW, ESE ES MI CLIENTE.',
         'Escribe UN parrafo poderoso que empiece con: Tu cliente real no es... sino la persona que...',
-        'Este parrafo debe:',
-        '- Describir al cliente por sus deseos no dichos, miedos internos y contradicciones emocionales',
-        '- Mencionar lo intangible: lo que busca sin saberlo, lo que evita sin admitirlo, lo que anhela en silencio',
-        '- Usar lenguaje directo, emocional y sin jerga de marketing',
-        '- Maximo 100 palabras, que cada palabra golpee',
-        'Luego genera 3 mensajes emocionales cortos (max 15 palabras cada uno) que conecten directamente con ese cliente.',
-        'Cada mensaje debe sentirse como si el cliente pensara: eso me describe exactamente.',
-        'Responde SOLO con este JSON (sin texto adicional, sin acentos en las keys):',
-        '{"interpretacion":"metafora emocional breve de las cartas elegidas","revelacion":"Tu cliente real no es... sino la persona que... [parrafo poderoso]","mensajes":["mensaje 1","mensaje 2","mensaje 3"]}'
+        'Describe al cliente por sus deseos no dichos, miedos internos y contradicciones emocionales. Sin demografia ni edad. Maximo 100 palabras.',
+        'Luego genera 3 mensajes emocionales cortos (max 15 palabras) que conecten directamente con ese cliente.',
+        'Responde SOLO con JSON: {"interpretacion":"metafora breve de la carta","revelacion":"Tu cliente real no es... sino...","mensajes":["mensaje1","mensaje2","mensaje3"]}'
       ].join('\n');
 
-      userContent = hasImg
-        ? [{type:'image',source:{type:'base64',media_type:'image/jpeg',data:imgData}},{type:'text',text:`Estas son las cartas SSP que elegí.\n\nMis respuestas:\n${qs}`}]
-        : [{type:'text',text:`No se pudo cargar la imagen.\n\nMis respuestas:\n${qs}`}];
+      const photoB64 = saved.photoB64 || (saved.photoThumb?.split(',')[1]);
+      userContent = photoB64
+        ? [{type:'image',source:{type:'base64',media_type:'image/jpeg',data:photoB64}},{type:'text',text:'Carta SSP elegida. Mis respuestas:\n'+qs}]
+        : [{type:'text',text:'Mis respuestas:\n'+qs}];
     }
 
     if (stageId === 'historia') {
-      const qs = stage.questions.map(q => {
-        const el = document.getElementById(`q-${q.key}`);
-        return `${q.label}: ${el?.value || saved[q.key] || ''}`;
-      }).join('\n');
+      HISTORIA_PARTES.forEach(p => { const el = document.getElementById('ht-'+p.id); if(el) { if(!journeyData['historia']) journeyData['historia']={}; journeyData['historia']['texto_'+p.id]=el.value.trim(); } });
+      const h = journeyData['historia'] || {};
+      const partesCtx = HISTORIA_PARTES.map(p => p.emoji+' '+p.title+': '+(h['texto_'+p.id]||'')).join('\n');
 
-      systemPrompt = `Eres un maestro narrador simbólico y estratega emocional, especialista en SSP (Smart Serious Play).
+      systemPrompt = [
+        'Eres un escritor creativo y estratega emocional especialista en SSP.',
+        'Contexto: Producto: '+(e1.nombre||'')+' — '+(e1.descripcion||''),
+        'Segmento revelado: '+(e3.revelacion||e3.selectedSegmentText||''),
+        'Elementos de la historia:\n'+partesCtx,
+        'MOMENTO 1: Toma los elementos y transformalos en una historia corta (150 palabras max), completamente fantasiosa y emotiva. Drama, tension y esperanza al final.',
+        'MOMENTO 2: Extrae 3 dolores, 3 frustraciones, 3 miedos del cliente real. Para cada uno: insight (verdad no dicha) y accionador (accion concreta).',
+        'Responde SOLO con JSON: {"historia":"texto","elementos":[{"tipo":"DOLOR","nombre":"nombre","descripcion":"desc","insight":"insight","accionador":"accion"},{"tipo":"DOLOR","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"DOLOR","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"FRUSTRACION","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"FRUSTRACION","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"FRUSTRACION","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"MIEDO","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"MIEDO","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"MIEDO","nombre":"","descripcion":"","insight":"","accionador":""}]}'
+      ].join('\n');
 
-El emprendedor eligió cartas SSP físicamente. Esas cartas son tu restricción creativa — úsalas como atmósfera, no las describas literalmente.
-
-Contexto:
-- Producto: ${e1.nombre||''} — ${e1.descripcion||''}
-- Segmento revelado: ${e3.selectedSegmentText||''}
-
-MOMENTO 1 — LA HISTORIA: Escribe una historia corta (máximo 150 palabras), fantasiosa, protagonizada por el personaje. Tensión, conflicto y un destello de esperanza.
-
-MOMENTO 2 — MAPA EMOCIONAL: Extrae exactamente 3 dolores, 3 frustraciones, 3 miedos. Para cada uno: insight (verdad no dicha) y accionador (acción/recurso/alianza concreta).
-
-Responde SOLO con este JSON exacto:
-{"historia":"texto completo de la historia","elementos":[{"tipo":"💔 DOLOR","nombre":"nombre corto","descripcion":"descripción empática","insight":"verdad no dicha","accionador":"acción/recurso/alianza"},{"tipo":"💔 DOLOR","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"💔 DOLOR","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😤 FRUSTRACIÓN","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😤 FRUSTRACIÓN","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😤 FRUSTRACIÓN","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😨 MIEDO","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😨 MIEDO","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😨 MIEDO","nombre":"","descripcion":"","insight":"","accionador":""}]}`;
-
-      userContent = hasImg
-        ? [{type:'image',source:{type:'base64',media_type:'image/jpeg',data:imgData}},{type:'text',text:`Cartas SSP elegidas.\n\nRespuestas:\n${qs}`}]
-        : [{type:'text',text:`Respuestas:\n${qs}`}];
+      userContent = [];
+      HISTORIA_PARTES.forEach(p => {
+        const foto = historiaPhotos[p.id] || (h['foto_'+p.id]?.split(',')[1]);
+        if (foto) userContent.push({type:'image',source:{type:'base64',media_type:'image/jpeg',data:foto}});
+      });
+      userContent.push({type:'text',text:'Genera la historia y el mapa emocional.'});
     }
 
     if (stageId === 'factor_wow') {
-      const selAcc = (e4.selectedAccionadores||[]).map(i => e4.accionadores?.[i]).filter(Boolean);
-      systemPrompt = `Eres un estratega de innovación y branding emocional, especialista en SSP (Smart Serious Play).
-
-Contexto completo del emprendedor:
-- Producto: ${e1.nombre||''} — ${e1.descripcion||''}
-- Segmento lógico: ${e2.quien||''}
-- Segmento revelado: ${e3.selectedSegmentText||''}
-- Accionadores seleccionados: ${selAcc.map(a=>a.accionador).join(', ')}
-- Accionador ganador (modelo causal): ${e5.ganador||''}
-- Por qué es el ganador: ${e5.razon||''}
-
-MOMENTO 1 — PROPUESTA DE VALOR:
-"Para [segmento revelado] que [insight profundo], [producto] ofrece [beneficio único basado en accionador ganador], a diferencia de [alternativas], porque [razón emocional y funcional]."
-
-MOMENTO 2 — FACTOR WOW:
-3 versiones: Funcional (qué hace diferente en práctica), Emocional (cómo hace sentir al cliente), Simbólico (qué representa para la identidad del cliente).
-El Factor WOW es ese elemento único que hace decir "¡WOW!"
-
-Responde SOLO con este JSON:
-{"propuesta":"propuesta de valor completa","wowCards":[{"tipo":"funcional","texto":"descripción WOW funcional","momento":"frase que diría el cliente"},{"tipo":"emocional","texto":"descripción WOW emocional","momento":"frase que diría el cliente"},{"tipo":"simbolico","texto":"descripción WOW simbólico","momento":"frase que diría el cliente"}]}`;
-
-      userContent = [{type:'text',text:'Genera mi propuesta de valor y Factor WOW.'}];
+      const selAcc = (e4.selectedAcc||[]).map(i => e4.accionadores?.[i]).filter(Boolean);
+      systemPrompt = [
+        'Eres un estratega de innovacion y branding emocional especialista en SSP.',
+        'Contexto completo:',
+        'Producto: '+(e1.nombre||'')+' — '+(e1.descripcion||''),
+        'Segmento revelado: '+(e3.revelacion||''),
+        'Accionadores seleccionados: '+selAcc.map(a=>a.accionador).join(', '),
+        'Accionador ganador: '+(e5.ganador||''),
+        'Variable propuesta de valor: '+(e5.propuesta_variable||''),
+        'MOMENTO 1: Propuesta de valor: Para [segmento] que [insight], [producto] ofrece [beneficio unico], a diferencia de [alternativas], porque [razon emocional].',
+        'MOMENTO 2: Factor WOW en 3 versiones: Funcional, Emocional, Simbolico.',
+        'Responde SOLO con JSON: {"propuesta":"propuesta completa","wowCards":[{"tipo":"funcional","texto":"desc","momento":"frase del cliente"},{"tipo":"emocional","texto":"","momento":""},{"tipo":"simbolico","texto":"","momento":""}]}'
+      ].join('\n');
+      userContent = [{type:'text',text:'Genera la propuesta de valor y Factor WOW.'}];
     }
 
-    // Build content and compress image to max 300KB
-    let finalContent = Array.isArray(userContent) ? userContent : [{type:'text',text:userContent}];
-    const imgBlock = finalContent.find(b => b.type === 'image');
-    if (imgBlock && imgBlock.source && imgBlock.source.data) {
-      try {
-        const compressImage = (data, quality) => new Promise((res) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const maxW = 600;
-            const scale = Math.min(1, maxW / Math.max(img.width, img.height));
-            canvas.width = Math.floor(img.width * scale);
-            canvas.height = Math.floor(img.height * scale);
-            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-            res(canvas.toDataURL('image/jpeg', quality).split(',')[1]);
-          };
-          img.src = 'data:image/jpeg;base64,' + data;
-        });
-        let compressed = await compressImage(imgBlock.source.data, 0.5);
-        // If still too large, compress more
-        if (compressed.length > 300000) compressed = await compressImage(compressed, 0.3);
-        imgBlock.source.data = compressed;
-        imgBlock.source.media_type = 'image/jpeg';
-        console.log('Image compressed to', compressed.length, 'chars');
-      } catch(e) { console.warn('Image compress failed', e); }
-    }
-
-    const resp = await fetch('https://anthropicproxy-z4dcljw5oa-uc.a.run.app', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({model:'claude-haiku-4-5', max_tokens:2000, system:systemPrompt, messages:[{role:'user',content:finalContent}]})
+    const resp = await fetch(PROXY_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-haiku-4-5', max_tokens:2000, system:systemPrompt, messages:[{role:'user',content:userContent}]})
     });
-
-    if (!resp.ok) {
-      const errText = await resp.text();
-      console.error('Proxy error:', resp.status, errText);
-      throw new Error('Error del servidor: ' + resp.status);
-    }
-
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const data = await resp.json();
-    const raw = data.content && data.content[0] ? data.content[0].text : '{}';
+    const raw = data.content?.[0]?.text || '{}';
+
     let parsed;
     try {
-      parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
-    } catch(parseErr) {
-      console.error('Parse error, raw:', raw);
-      showToast('Error al procesar — intenta regenerar');
-      throw new Error('JSON invalido');
+      const clean = raw.replace(/```json|```/g,'').replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D]/g,'"').trim();
+      parsed = JSON.parse(clean);
+    } catch(e) {
+      const m = raw.match(/\{[\s\S]*\}/);
+      if (m) parsed = JSON.parse(m[0]);
+      else throw new Error('JSON invalido');
     }
 
     if (!journeyData[stageId]) journeyData[stageId] = {};
-    if (stage.questions) stage.questions.forEach(q => {
-      const el = document.getElementById(`q-${q.key}`);
-      if (el) journeyData[stageId][q.key] = el.value.trim();
-    });
 
     if (stageId === 'segmento_revelado') {
-      journeyData[stageId].aiResult = '🃏 ' + (parsed.interpretacion || '');
+      journeyData[stageId].aiResult = parsed.interpretacion || '';
       journeyData[stageId].revelacion = parsed.revelacion || '';
       journeyData[stageId].mensajes = parsed.mensajes || [];
-      journeyData[stageId].segments = (parsed.mensajes || []).map((m, i) => ({
-        label: 'Mensaje ' + (i+1),
-        text: '',
-        message: m
-      }));
     }
     if (stageId === 'historia') {
-      journeyData[stageId].aiResult = `📖 LA HISTORIA\n\n${parsed.historia}`;
-      journeyData[stageId].accionadores = parsed.elementos.map(e => ({tipo:e.tipo, nombre:e.nombre, insight:e.insight, accionador:e.accionador}));
+      journeyData[stageId].aiResult = 'HISTORIA\n\n' + (parsed.historia||'');
+      journeyData[stageId].accionadores = (parsed.elementos||[]).map(e => ({
+        tipo: e.tipo==='DOLOR'?'💔 DOLOR':e.tipo==='FRUSTRACION'?'😤 FRUSTRACIÓN':'😨 MIEDO',
+        nombre:e.nombre, insight:e.insight, accionador:e.accionador
+      }));
     }
     if (stageId === 'factor_wow') {
-      journeyData[stageId].aiResult = `🎯 PROPUESTA DE VALOR\n\n${parsed.propuesta}`;
-      journeyData[stageId].wowCards = parsed.wowCards;
-      journeyData[stageId].propuesta = parsed.propuesta;
+      journeyData[stageId].aiResult = parsed.propuesta || '';
+      journeyData[stageId].propuesta = parsed.propuesta || '';
+      journeyData[stageId].wowCards = parsed.wowCards || [];
     }
 
-    saveLocal();
+    saveToDB();
     if (regen) regen.classList.add('visible');
     renderStage(currentStage);
 
   } catch(e) {
-    showToast('Error al conectar con la IA');
-    console.error(e);
+    showToast('Error — presiona Regenerar'); console.error(e);
   }
-
-  btn.disabled = false;
-  btn.innerHTML = stage.aiButton;
+  if (btn) { btn.disabled = false; btn.innerHTML = s?.aiBtn || '✦ Generar'; }
 };
 
 window.regenAI = (stageId) => {
-  if (journeyData[stageId]) {
-    journeyData[stageId].aiResult = null;
-    journeyData[stageId].segments = null;
-    journeyData[stageId].accionadores = null;
-    journeyData[stageId].wowCards = null;
-  }
+  if (journeyData[stageId]) { journeyData[stageId].aiResult=null; journeyData[stageId].revelacion=null; journeyData[stageId].mensajes=null; journeyData[stageId].accionadores=null; journeyData[stageId].wowCards=null; }
   runAI(stageId);
 };
 
 // ── SELECTIONS ──
-window.selectSegment = (idx) => {
+window.selectMensaje = (idx) => {
   const saved = journeyData['segmento_revelado'] || {};
-  const mensaje = saved.mensajes ? saved.mensajes[idx] : (saved.segments?.[idx]?.message || '');
   journeyData['segmento_revelado'].selectedSegment = idx;
   journeyData['segmento_revelado'].selectedSegmentText = saved.revelacion || '';
-  journeyData['segmento_revelado'].selectedMensaje = mensaje;
+  journeyData['segmento_revelado'].selectedMensaje = saved.mensajes?.[idx] || '';
   journeyData['segmento_revelado'].completed = true;
-  journeyData['segmento_revelado'].completedSummary = 'Tu cliente real es:\n\n' + (saved.revelacion || '') + '\n\nMensaje elegido: "' + mensaje + '"';
-  saveLocal();
-  document.getElementById('btn-next').disabled = false;
-  renderSidebar();
-  renderStage(currentStage);
-  showToast('✓ Segmento revelado guardado');
+  journeyData['segmento_revelado'].completedSummary = 'Tu cliente real es:\n\n' + (saved.revelacion||'') + '\n\nMensaje elegido: "' + (saved.mensajes?.[idx]||'') + '"';
+  saveToDB(); document.getElementById('btn-next').disabled = false;
+  renderSidebar(); renderStage(currentStage); showToast('✓ Segmento revelado guardado');
 };
 
 window.toggleAcc = (idx) => {
   if (!journeyData['historia']) journeyData['historia'] = {};
-  let sel = journeyData['historia'].selectedAccionadores || [];
-  if (sel.includes(idx)) sel = sel.filter(i => i !== idx);
+  let sel = journeyData['historia'].selectedAcc || [];
+  if (sel.includes(idx)) sel = sel.filter(i => i!==idx);
   else { if (sel.length >= 6) { showToast('Máximo 6 accionadores'); return; } sel.push(idx); }
-  journeyData['historia'].selectedAccionadores = sel;
-  saveLocal();
-  renderStage(currentStage);
+  journeyData['historia'].selectedAcc = sel;
+  saveToDB(); renderStage(currentStage);
 };
 
 window.confirmAcc = () => {
-  const sel = journeyData['historia']?.selectedAccionadores || [];
+  const sel = journeyData['historia']?.selectedAcc || [];
   if (!sel.length) { showToast('Selecciona al menos 1'); return; }
   const accs = journeyData['historia']?.accionadores || [];
-  const txt = sel.map(i => `${accs[i]?.tipo} — ${accs[i]?.nombre}\n  💡 ${accs[i]?.insight}\n  ⚡ ${accs[i]?.accionador}`).join('\n\n');
+  const txt = sel.map(i => accs[i]?.tipo+' — '+accs[i]?.nombre+'\n  💡 '+accs[i]?.insight+'\n  ⚡ '+accs[i]?.accionador).join('\n\n');
   journeyData['historia'].completed = true;
-  journeyData['historia'].completedSummary = `${sel.length} accionadores seleccionados:\n\n${txt}`;
-  saveLocal();
-  document.getElementById('btn-next').disabled = false;
-  renderSidebar();
-  showToast('✓ Accionadores confirmados');
+  journeyData['historia'].completedSummary = sel.length + ' accionadores seleccionados:\n\n' + txt;
+  saveToDB(); document.getElementById('btn-next').disabled = false;
+  renderSidebar(); showToast('✓ Accionadores confirmados');
 };
 
 window.acceptWOW = () => {
   const saved = journeyData['factor_wow'] || {};
   journeyData['factor_wow'].completed = true;
   journeyData['factor_wow'].completedSummary = saved.propuesta || '';
-  saveLocal();
-  document.getElementById('btn-next').disabled = false;
-  renderSidebar();
-  showToast('✓ Propuesta de valor y Factor WOW guardados');
+  saveToDB(); document.getElementById('btn-next').disabled = false;
+  renderSidebar(); showToast('✓ Factor WOW guardado');
 };
 
 // ── NAV ──
-window.prevStage = () => { if (currentStage > 0) { currentStage--; renderSidebar(); renderStage(currentStage); } };
-window.nextStage = () => { currentStage++; renderSidebar(); renderStage(currentStage); };
+window.prevStage = () => { if(currentStage>0){currentStage--;renderSidebar();renderStage(currentStage);} };
+window.nextStage = () => { currentStage++;renderSidebar();renderStage(currentStage); };
 
 // ── SUMMARY ──
 window.showSummary = () => {
   document.getElementById('progress-fill').style.width = '100%';
-  document.getElementById('stage-view').innerHTML = `
-    <div class="summary-card">
-      <div class="summary-title">Tu Proceso de Innovación</div>
-      <div class="summary-subtitle">Metodología SSP · ${new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'})}</div>
-      ${STAGES.map(s => {
-        const d = journeyData[s.id] || {};
-        return `<div class="summary-item">
-          <div class="summary-stage-name">${s.title}</div>
-          <div class="summary-content">${d.completedSummary||'<em style="color:var(--muted)">Sin completar</em>'}</div>
-        </div>`;
-      }).join('')}
-      <button class="btn-download" onclick="downloadProcess()">⬇ Descargar mi proceso completo</button>
-    </div>`;
+  document.getElementById('stage-view').innerHTML =
+    '<div class="summary-card"><div class="summary-title">Tu Proceso de Innovación</div>' +
+    '<div class="summary-sub">Smart Serious Play · Business World Cup Guatemala 2026 · ' + new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'}) + '</div>' +
+    STAGES.map(s => '<div class="summary-item"><div class="summary-stage">' + s.title + '</div><div class="summary-content">' + (journeyData[s.id]?.completedSummary||'<em style="color:var(--muted)">Sin completar</em>') + '</div></div>').join('') +
+    '<button class="btn-primary btn-orange" style="margin-top:1rem" onclick="downloadProcess()">⬇ Descargar mi proceso completo</button></div>';
   renderSidebar();
 };
 
 window.downloadProcess = () => {
-  let txt = `MI PROCESO DE INNOVACIÓN SSP\n${'='.repeat(40)}\n${new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'})}\n\n`;
-  STAGES.forEach(s => {
-    const d = journeyData[s.id] || {};
-      txt += s.num + '. ' + s.title.toUpperCase() + '\n' + '-'.repeat(35) + '\n' + (d.completedSummary || 'Sin completar') + '\n\n';
-  });
-  const blob = new Blob([txt], {type:'text/plain'});
+  let txt = 'MI PROCESO DE INNOVACION SSP\nBusiness World Cup Guatemala 2026\n' + new Date().toLocaleDateString('es-MX') + '\n\n';
+  STAGES.forEach(s => { txt += s.num+'. '+s.title.toUpperCase()+'\n'+'-'.repeat(35)+'\n'+(journeyData[s.id]?.completedSummary||'Sin completar')+'\n\n'; });
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'proceso-innovacion-ssp.txt';
-  a.click();
+  a.href = URL.createObjectURL(new Blob([txt],{type:'text/plain'}));
+  a.download = 'proceso-innovacion-ssp.txt'; a.click();
 };
 
+// ── TOAST ──
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
 }
-
-// Init handled by Firebase auth
-
-// ── SSP CARDS (67 cartas con descripciones) ──
-const SSP_CARDS = [
-  {id:1, f:"https://drive.google.com/uc?export=view&id=1QqWNuU4ghhG6hCQn9r879AQf3JaZpLKP", r:"https://drive.google.com/uc?export=view&id=1LCElBrQQ6NPUqpdR2o7PxQ3sIBA0TJD1", desc:"Astronauta en el espacio rodeado de satélites y estrellas. Representa conexión, exploración y visión cósmica."},
-  {id:2, f:"https://drive.google.com/uc?export=view&id=1BRL-EuVCFbKLN-Sz3yjMQhYL1llAH3yx", r:"https://drive.google.com/uc?export=view&id=1oIqKBP9Gem6_fQXKfflal_L_HFDLnVQX", desc:"Cleopatra en un templo egipcio. Representa poder, identidad, legado y liderazgo femenino ancestral."},
-  {id:3, f:"https://drive.google.com/uc?export=view&id=1Ejqo_LI3Anq227d6saN7Z9WTj8aooh4E", r:"https://drive.google.com/uc?export=view&id=1uumAqbc_k1vZlWYygluAs5XuBzNb4KRo", desc:"Buda en entorno sereno con árboles y templo. Representa tranquilidad, espiritualidad y búsqueda interior."},
-  {id:4, f:"https://drive.google.com/uc?export=view&id=1gEW2yeDjOFr2JCEVM-fNwzareYL6t9_g", r:"https://drive.google.com/uc?export=view&id=1PxUZn0xtBegDy5Q53hYLZqJbh7DbZkpt", desc:"Explorador con binoculares en bosque lleno de flora y fauna. Representa descubrimiento, curiosidad y aventura."},
-  {id:5, f:"https://drive.google.com/uc?export=view&id=1xAYJP5191Ht9bYYO4fYeo_NEUPZT_5EC", r:"https://drive.google.com/uc?export=view&id=1tVGI7gnU008d6UNAOXtylz_i52qUSCHz", desc:"Personaje limpiando un baño con trapeador y productos. Representa el trabajo invisible, el esfuerzo cotidiano y las tareas sin reconocimiento."},
-  {id:6, f:"https://drive.google.com/uc?export=view&id=1FR0Eh6yL9fz06rtB-UqB8DhdsJgtbfK8", r:"https://drive.google.com/uc?export=view&id=1PoR_Ai5V1b3YeV3e2GJZJUk8IK3kpCRE", desc:"Piloto de Fórmula 1 en un circuito. Representa velocidad, competencia, precisión y adrenalina."},
-  {id:7, f:"https://drive.google.com/uc?export=view&id=1hrzAutJO-Nd-jqqU2H_T4cjO0-botPi5", r:"https://drive.google.com/uc?export=view&id=1OXRSVoxcs0RhZuokDXkBqR8cP6W7_3K", desc:"Surfista en una ola enorme en playa soleada. Representa libertad, fluir con las circunstancias y dominar la incertidumbre."},
-  {id:8, f:"https://drive.google.com/uc?export=view&id=12QFVyfifi2RQJ0Oj8eRL7nlAGKVkkUA4", r:"https://drive.google.com/uc?export=view&id=17jfT_8ol5XbR97olO52HcQntKJz-1Ysr", desc:"Carrusel en parque de diversiones lleno de personas. Representa ciclos repetitivos, alegría colectiva y nostalgia."},
-  {id:9, f:"https://drive.google.com/uc?export=view&id=1hWVrDFw0E1Vkngls4_H4gfwoCH1h8UUo", r:"https://drive.google.com/uc?export=view&id=11CEHwaexmk814eKs3vZQZpWRkaPMGpEE", desc:"Médico realizando cirugía en quirófano moderno. Representa precisión, responsabilidad vital y conocimiento especializado."},
-  {id:10, f:"https://drive.google.com/uc?export=view&id=1jJ1gRWFfVug86Kg1hs7DEQCVv0Ci1b6Q", r:"https://drive.google.com/uc?export=view&id=1oaAIhT2fFs03UMbYrPXO6nS8gG4wlAP_", desc:"Personaje pensativo en avenida urbana rodeado de árboles. Representa introspección, soledad entre multitudes y reflexión."},
-  {id:11, f:"https://drive.google.com/uc?export=view&id=1I0l1c97WqnxnjEr1Bu__y2w075qSH0-H", r:"https://drive.google.com/uc?export=view&id=1ng_XOkjUwNjAhJNhnFtXhXznVB296O1e", desc:"Adulto y niño caminando juntos en parque con tonos cálidos. Representa vínculos intergeneracionales, guía y acompañamiento."},
-  {id:12, f:"https://drive.google.com/uc?export=view&id=1yp3tjFC-fdtXksoTinWKA7D00SvdGbhz", r:"https://drive.google.com/uc?export=view&id=1c_XgmizRttG5JtxHKCIHecJx3M2u2B7C", desc:"Corredor en maratón con Estatua de la Libertad al fondo. Representa perseverancia, metas grandes y superación personal."},
-  {id:13, f:"https://drive.google.com/uc?export=view&id=15s1-dUyNt19Vb90oSQLhK7JhGLGM7o1f", r:"https://drive.google.com/uc?export=view&id=1ebs8JIzLjPEe8zUetAtlVhNIa9uXwAaJ", desc:"Persona disfrutando pasta en entorno hogareño con copa de vino. Representa placer simple, disfrute cotidiano y celebración."},
-  {id:14, f:"https://drive.google.com/uc?export=view&id=1QZtaPnO545PW5J7UrKOUPjQ3hGqqp7s3", r:"https://drive.google.com/uc?export=view&id=1_rr5koDcjcknRgM1jX4CXm98pUrGmP1I", desc:"Abuelo leyendo en biblioteca acogedora con iluminación cálida. Representa sabiduría acumulada, paciencia y conocimiento."},
-  {id:15, f:"https://drive.google.com/uc?export=view&id=1s83AEqpWfo-XIvrEcuGMlxfiFO-Nv833", r:"https://drive.google.com/uc?export=view&id=1ldWNHwuXZNV0Ov8ypomiJFIwBtQ7-TQS", desc:"Mujer Maravilla con lazo dorado en ambiente de acción. Representa fuerza femenina, justicia y poder interior."},
-  {id:16, f:"https://drive.google.com/uc?export=view&id=1wgPbKTpa6oVTXlZvW_mDU5yXy8avb1ui", r:"https://drive.google.com/uc?export=view&id=1Wwz_ZCKCPVmzEMMFpKcUxvI3GWsjUaPt", desc:"Estación de tren animada con personas en andenes. Representa transiciones, partidas, llegadas y momentos de cambio."},
-  {id:17, f:"https://drive.google.com/uc?export=view&id=1m9Y1DCfWvQ0gMWL8Ue57AP3Fbkc38KTY", r:"https://drive.google.com/uc?export=view&id=1E8J-TZBpmWI7PY4ncHwLoprbbiYcIbs1", desc:"Profesora en salón de clases con pizarra. Representa enseñanza, transmisión de conocimiento y formación."},
-  {id:18, f:"https://drive.google.com/uc?export=view&id=1emLElIDrLUEL_tIdT1WgcMlQXqdsZMo5", r:"https://drive.google.com/uc?export=view&id=1dVZTmFBcP1UsZdoHjmFYjEORTVYfd845", desc:"Chef cocinando en cocina bien equipada con ingredientes frescos. Representa creatividad, pasión y transformación de elementos simples."},
-  {id:19, f:"https://drive.google.com/uc?export=view&id=13KGWC1Ahppz5Di7xJwIzuH-hSkdnDdR2", r:"https://drive.google.com/uc?export=view&id=1gP8848WQ_DYchwRLPqa60-RwSxxeGLAy", desc:"Palomas hechas de LEGO en plaza urbana. Representa comunidad, mensajes y conexiones cotidianas invisibles."},
-  {id:20, f:"https://drive.google.com/uc?export=view&id=1rdsZ9rVaXjNgVlCHkPM5vXshNAwz2QUI", r:"https://drive.google.com/uc?export=view&id=1ZK8cfgq2iYpLqja-I03AOpnBJR5aybUB", desc:"Abeja en flor brillante en campo bajo sol radiante. Representa trabajo colectivo, propósito y polinización de ideas."},
-  {id:21, f:"https://drive.google.com/uc?export=view&id=1rtjSrla7dNCRIkMIxsk5c2EcVBnt_5SK", r:"https://drive.google.com/uc?export=view&id=1RpwgmeeyjWC2PvHi0m6cc4tkS4Bqu1KS", desc:"Turista junto a Torre Eiffel con cámara y bebida. Representa exploración cultural, nuevas perspectivas y apertura al mundo."},
-  {id:22, f:"https://drive.google.com/uc?export=view&id=1HwZjv6rdOugrmYtqZ_2sinWrhVUojrbu", r:"https://drive.google.com/uc?export=view&id=1BvErIhi7Muf5V5XC10bOU-vRYr_YTYiQ", desc:"Persecución entre policía y ladrón en ciudad. Representa conflicto, reglas vs libertad y tensión entre sistemas."},
-  {id:23, f:"https://drive.google.com/uc?export=view&id=1KG7J1zKXjgHlBpY4_qUFWfqCUOSw4KpM", r:"https://drive.google.com/uc?export=view&id=1u3jVmaxdRdqRFYcB5lZPInsQ_pKXKLuY", desc:"Payaso triste en entorno cálido con iluminación tenue. Representa la máscara social, la tristeza oculta y la contradicción entre apariencia y realidad."},
-  {id:24, f:"https://drive.google.com/uc?export=view&id=1RiNEpzTFWo4N88tQcUZj_OLUBKjvwj2c", r:"https://drive.google.com/uc?export=view&id=1JQBck0lqKdxfAw4GvLO4Ef7wTKHAgdVv", desc:"Koala adulto abrazando a su cría en árbol. Representa protección, ternura, vínculo y cuidado incondicional."},
-  {id:25, f:"https://drive.google.com/uc?export=view&id=1B7Bn_5u-8B-h2N-inqCLvHDcQHXGamIv", r:"https://drive.google.com/uc?export=view&id=1ZjqrwMjOA_K5jrkMU6TMSoiQKrz4IGZT", desc:"Banquero en banco rodeado de dinero y monedas. Representa poder económico, seguridad financiera y control de recursos."},
-  {id:26, f:"https://drive.google.com/uc?export=view&id=1iOu_3aovw0w1ggv4dVFlxoVrUbQwfZ3d", r:"https://drive.google.com/uc?export=view&id=1VYy4TJb7xrDGZsLBE3sNcGvMILVF7Ep-", desc:"Boda LEGO con pareja bajo arco de flores. Representa compromiso, celebración y nuevos comienzos."},
-  {id:27, f:"https://drive.google.com/uc?export=view&id=1vAPZuP5lTrTDT07tRtu9fxOZfeyNVcMv", r:"https://drive.google.com/uc?export=view&id=18wI-H313WEAzOIhAUPCvI9OxHZfvBy7f", desc:"Entorno steampunk con relojes, engranajes y reloj de arena. Representa el tiempo como recurso, mecanismos complejos y la presión del reloj."},
-  {id:28, f:"https://drive.google.com/uc?export=view&id=1pWRkHJ_r_AEVMUVQKMpdQCFMkIhxynX-", r:"https://drive.google.com/uc?export=view&id=1tedBO6gnsJWTFL3yHzzoX9UEiRHUXW4Y", desc:"Persona en paracaídas descendiendo con cielo despejado. Representa salto al vacío, confianza y rendirse al proceso."},
-  {id:29, f:"https://drive.google.com/uc?export=view&id=1st8N90-DIaH5XmywFa_fZN4P7BDp5dhX", r:"https://drive.google.com/uc?export=view&id=1MWbrypg4vUtpc8X3ywKwSeoYMP-c7X2x", desc:"Thomas Edison en laboratorio rodeado de bombillas y equipo científico. Representa inventiva, perseverancia ante el fracaso y genialidad."},
-  {id:30, f:"https://drive.google.com/uc?export=view&id=1-DYtukFLYi8HzBObnn3U5Qk96lXp_uvZ", r:"https://drive.google.com/uc?export=view&id=1hZzqQ2vipLpFOU8myaxPWb0GLupFGiv-", desc:"Fotógrafo explorador con cámara, mochila y sombrero. Representa documentar la realidad, capturar momentos y exploración."},
-  {id:31, f:"https://drive.google.com/uc?export=view&id=17ZzN3JY0241-mJIJlWn10j5smnL58Pa_", r:"https://drive.google.com/uc?export=view&id=1lmI_CisjGdcUi5WFoQ8Yna9lTpeahnkX", desc:"Catrina del Día de Muertos rodeada de cempasúchil. Representa la dualidad vida-muerte, celebración de la memoria y transformación."},
-  {id:32, f:"https://drive.google.com/uc?export=view&id=1mjTLV20HwTGaepSNF9rxOqtX0l3XtIQl", r:"https://drive.google.com/uc?export=view&id=1tFfcpnIq0_eJsCz5_LGLeGgL5Zqr1xaH", desc:"Pueblo europeo con casas tradicionales y bicicletas. Representa comunidad, ritmo lento y tradición bien conservada."},
-  {id:33, f:"https://drive.google.com/uc?export=view&id=1nwbxl11B2ddYReMElij4MeudwD3aHTIH", r:"https://drive.google.com/uc?export=view&id=1BMzqlANbmN4kXXI0KgH4ApJ8ehBh-yT6", desc:"Buzo explorando arrecife con corales y delfines. Representa profundidad, mundos ocultos y exploración de lo desconocido."},
-  {id:34, f:"https://drive.google.com/uc?export=view&id=1Ygfi-SOJwcrA2X_Rob6k31k8E1o-TEqN", r:"https://drive.google.com/uc?export=view&id=16qTvI0yhUL26mLLN0eEkMvB6t9NAmkMb", desc:"Chef con variedad de especias coloridas y ordenadas. Representa mezcla creativa, precisión y el arte de combinar elementos."},
-  {id:35, f:"https://drive.google.com/uc?export=view&id=1x3uqdnM0IiDOJ1gLPNPhwYfSbg3Zy-zE", r:"https://drive.google.com/uc?export=view&id=1wdieB_fAfXMG1h6663dC0enasQEDvkj2", desc:"Pirata con loro y barco de calavera en entorno tropical. Representa rebeldía, búsqueda de tesoros y vivir al margen de las reglas."},
-  {id:36, f:"https://drive.google.com/uc?export=view&id=16g2YlGEidNuUqxQNbBsPZ8r0OWRYJ7xY", r:"https://drive.google.com/uc?export=view&id=1ynL9pGX2zKX53_yA8EL_hWUBbXIMheRW", desc:"Pelé en estadio lleno con banderas de Brasil. Representa excelencia, pasión colectiva e ícono que trasciende su campo."},
-  {id:37, f:"https://drive.google.com/uc?export=view&id=15WcKn4hptBJjbSPkJSWnHI7jBey_VKI5", r:"https://drive.google.com/uc?export=view&id=1AyOoUX6PejO5EjLgaGpfnKsANNsM69gw", desc:"Stephen Hawking con galaxias y ecuaciones al fondo. Representa inteligencia que supera limitaciones físicas y visión universal."},
-  {id:38, f:"https://drive.google.com/uc?export=view&id=1E_QxozsZ_wMy4Wg4Df4QPvSToG6HtlYD", r:"https://drive.google.com/uc?export=view&id=1yE9aUrgkc5UWmYjptRtLk3vIosRZADNe", desc:"Juana de Arco con armadura, espada y bandera. Representa convicción, liderazgo en adversidad y valentía."},
-  {id:39, f:"https://drive.google.com/uc?export=view&id=1mhu2aQmL3vN99Vzht_t8xK6q_1GML6II", r:"https://drive.google.com/uc?export=view&id=163C_139IpJU7u_x25oVHeW8O0dTq35n9", desc:"Nikola Tesla en laboratorio futurista con bobinas eléctricas. Representa genialidad incomprendida, visión del futuro y energía transformadora."},
-  {id:40, f:"https://drive.google.com/uc?export=view&id=1MxbV2Oa01lVDdbmA9uC6vGCCm1giVx4n", r:"https://drive.google.com/uc?export=view&id=1RuGpzfVs81vsarJ44NvBkJyh9FKBBinJ", desc:"Gandhi con bastón y rueca, resistencia pacífica. Representa cambio sin violencia, simplicidad poderosa y propósito colectivo."},
-  {id:41, f:"https://drive.google.com/uc?export=view&id=1TwAHH2st1AW40RamEOsvXDivtVxhPZfC", r:"https://drive.google.com/uc?export=view&id=1PlDFZlLrXJKGwWdyS84JZdVFd5HSiQfR", desc:"Einstein con fórmulas en pizarrón sosteniendo puntero. Representa curiosidad intelectual, relatividad y pensamiento que cambia paradigmas."},
-  {id:42, f:"https://drive.google.com/uc?export=view&id=1aBW-oVx5qkptiVsY6zcgQ8oyrr362ZOZ", r:"https://drive.google.com/uc?export=view&id=1vE7Enx7TZWbSw00hkAvOl2nRd2N-O6Nf", desc:"Steve Jobs con suéter negro y fondo de tecnología. Representa innovación disruptiva, diseño como filosofía y visión obstinada."},
-  {id:43, f:"https://drive.google.com/uc?export=view&id=1WcV20xKLCvzUcDkvWfqGqRIBXdCNfspO", r:"https://drive.google.com/uc?export=view&id=1xxFUw84uVlvjkQAiMVhHxWT9Eu5EDs4r", desc:"Marilyn Monroe con vestido blanco en calle vibrante. Representa ícono cultural, atracción magnética y vulnerabilidad detrás del glamour."},
-  {id:44, f:"https://drive.google.com/uc?export=view&id=1KU5w9PdbnoMw5DSPoPnWFJpLfSKyKRaC", r:"https://drive.google.com/uc?export=view&id=1yV6t0t4zAfkyxZQHl8M_ckJ7hhcJI4Gy", desc:"Charles Chaplin con bastón y sombrero de bombín. Representa humor como resistencia, humanidad universal y crítica social desde la comedia."},
-  {id:45, f:"https://drive.google.com/uc?export=view&id=1XalxyiLf7D4ii52md3O0Q6KMXCzep76-", r:"https://drive.google.com/uc?export=view&id=1_GHZ0l0Tz633Z_cZ2tsgwY51dyho41LV", desc:"Tienda de motocicletas de alta gama con modelos expuestos. Representa deseo de libertad, status y pasión por la velocidad."},
-  {id:46, f:"https://drive.google.com/uc?export=view&id=1NlbLzCVJ3ALkpdfmA4BpbEARKHLrKczP", r:"https://drive.google.com/uc?export=view&id=1u6f9VA0KUKvVc_sK9QEDlVHaou8EYGA4", desc:"Intersección urbana con multitud cruzando la calle. Representa flujo colectivo, anonimato en masa y decisiones en movimiento."},
-  {id:47, f:"https://drive.google.com/uc?export=view&id=1JqS3S0WXzsq1O40P-xg2FiiikdJ-U5Eg", r:"https://drive.google.com/uc?export=view&id=1zL0N_wH-9ps6Dr-UaP2VReBW0kH9Eulv", desc:"Joven pianista en teatro iluminado frente a piano de cola. Representa talento en solitario, vulnerabilidad ante el público y arte como vocación."},
-  {id:48, f:"https://drive.google.com/uc?export=view&id=1uozLSma0HaQH4c_tlUZYqdqNKWr_rijX", r:"https://drive.google.com/uc?export=view&id=1TVoc-eZQDDUG8wU0Tdm4tGyo6Oig09qS", desc:"Soldado arrodillado frente a perro militar en desierto. Representa lealtad incondicional, compañerismo en adversidad y vínculo sin palabras."},
-  {id:49, f:"https://drive.google.com/uc?export=view&id=11D84g630Nh_Sh622x1Q2VaiTYld9sW8B", r:"https://drive.google.com/uc?export=view&id=1k4ZayFjW5BPteTR0Eg1jca8eOdwk9ihu", desc:"Fotógrafo sosteniendo cámara profesional con lente destacado. Representa el ojo que captura la verdad, perspectiva única y documentar el mundo."},
-  {id:50, f:"https://drive.google.com/uc?export=view&id=1YTKGG7BI2nH9HDaWQ-jpyCL4UH6wjcwN", r:"https://drive.google.com/uc?export=view&id=1vVPkx4h3bcXYnfJUgUPOd2H6-_pvlvtd", desc:"Carpintero con casco y martillo en taller. Representa trabajo manual con orgullo, construcción paciente y habilidad artesanal."},
-  {id:51, f:"https://drive.google.com/uc?export=view&id=1KQvmaEQKFP6aI0lsJpKlUmPS_exdp7i6", r:"https://drive.google.com/uc?export=view&id=1dm5YR5nsAOzL66L0W8rzhlsvVdHx01Hl", desc:"Bombero equipado con mangueras y camiones al fondo. Representa respuesta en crisis, valentía ante el peligro y protección de otros."},
-  {id:52, f:"https://drive.google.com/uc?export=view&id=1j5Y4UiO0hNSsHz2UR4s9JLZpkYNmoXWC", r:"https://drive.google.com/uc?export=view&id=1xK-_e0nKs7Ijp4biE_gZWv2mPE7jwHBh", desc:"Piloto dentro de cabina de avión con instrumentos. Representa control bajo presión, autoridad técnica y visión desde las alturas."},
-  {id:53, f:"https://drive.google.com/uc?export=view&id=1YaOVftO7BtDxcdP5M6zvR5z25ZPjdZOI", r:"https://drive.google.com/uc?export=view&id=147vyxzohviEOEgvcLJczRei8yN4ZlKof", desc:"Hombre en traje de época observándose en espejo con expresión diferente. Representa dualidad interna, identidad oculta y contraste entre imagen pública y privada."},
-  {id:54, f:"https://drive.google.com/uc?export=view&id=1nUOxmUAk2ngplsoqv1wIzVauTDg49urO", r:"https://drive.google.com/uc?export=view&id=1zZ808TosEPLctGSG6s554ipqkBVkmMmB", desc:"Dos autos chocando en intersección urbana con ladrillos LEGO dispersos. Representa colisión de fuerzas, consecuencias inevitables y puntos de quiebre."},
-  {id:55, f:"https://drive.google.com/uc?export=view&id=1_s8MHk3vjAX61xodWq0lAoDrHVEr_-QT", r:"https://drive.google.com/uc?export=view&id=1agSJqe2T5DwdAd56yyxFr7xNa6l9D_5B", desc:"Alpinista celebrando en cima de montaña nevada. Representa logro después del esfuerzo extremo, superación de límites y perspectiva desde la cima."},
-  {id:56, f:"https://drive.google.com/uc?export=view&id=1T4TYrkZTpsORA0xWiSHFZckY1mCO-uiW", r:"https://drive.google.com/uc?export=view&id=1IXXvSfkvu-K0xbZA7XcG0WyBNAzc_20A", desc:"Cineasta grabando en set animado con público. Representa narrar historias, crear realidades y el poder de la imagen."},
-  {id:57, f:"https://drive.google.com/uc?export=view&id=1coHSO7GR6ue8LPqqZmVryoqha5hlpXLU", r:"https://drive.google.com/uc?export=view&id=13BQQbRrxd4duxlxoGur8pJ16H3k1hjAf", desc:"Celda de prisión con prisionero en uniforme a rayas. Representa encierro, limitaciones impuestas y libertad coartada."},
-  {id:58, f:"https://drive.google.com/uc?export=view&id=1ZEtgEY31pCNYT8FRWhHyYFtY_b3YoP7w", r:"https://drive.google.com/uc?export=view&id=16KireALYC6g5Ujh4RxvctetwG2brIesb", desc:"El hombre invisible en entorno urbano sin rostro visible. Representa invisibilidad social, pasar desapercibido y existir sin ser visto."},
-  {id:59, f:"https://drive.google.com/uc?export=view&id=1m3CCXssLrN43ZbS6Vms15DLcVtnJAx--", r:"https://drive.google.com/uc?export=view&id=1P7FY-kkOuqBRMSS-IvyZaMGkktBKKhzf", desc:"Joven explorador con león en entorno selvático. Representa valentía ante lo imponente, dominio del miedo y alianzas inesperadas."},
-  {id:60, f:"https://drive.google.com/uc?export=view&id=1vdt9aVUWtG16h-vJdAj8KLs07RATHjRP", r:"https://drive.google.com/uc?export=view&id=1J046N2cf8YKvzsXwzJYh6BAoL12b3AEo", desc:"Cofre del tesoro lleno de monedas en playa tropical con barco pirata. Representa recompensa oculta, búsqueda de valor y riqueza por descubrir."},
-  {id:61, f:"https://drive.google.com/uc?export=view&id=1c9L9inMLSFmtAiM9YSKYDxmpV0s0_uRJ", r:"https://drive.google.com/uc?export=view&id=1Vp1_UlHXBDPV3QO5J5YRE1SlKSc71VDv", desc:"Astronautas con rover en luna con la Tierra visible. Representa exploración de lo imposible, trabajo en equipo extremo y nuevos territorios."},
-  {id:62, f:"https://drive.google.com/uc?export=view&id=1r0i0B5ZtWku6GIFYxwRSS9aK7jNed1ti", r:"https://drive.google.com/uc?export=view&id=1HJTvVf2zCY7Lh3TZzQwnEGjWv6em7b2L", desc:"Jardinero plantando árbol con herramientas y macetas. Representa crecimiento paciente, cuidado del futuro y siembra de lo que vendrá."},
-  {id:63, f:"https://drive.google.com/uc?export=view&id=1em-Q1a35VWeSmcXHVuVa0itiK9WnWVLR", r:"https://drive.google.com/uc?export=view&id=17fNlwSqAFcNtWvJZyfD7JzYtQeWKKkT8", desc:"Monja frente a iglesia en ambiente espiritual con jardines. Representa devoción, servicio y encontrar paz en la fe."},
-  {id:64, f:"https://drive.google.com/uc?export=view&id=1ucUhsD8krgUspZnpmzks4Lw0QOJYMSg6", r:"https://drive.google.com/uc?export=view&id=1bUhvW42QVJe7F2MWRDeig_Fc0H3tNCRT", desc:"Hombre Araña en edificio con rascacielos nocturnos. Representa doble identidad, responsabilidad con gran poder y proteger en silencio."},
-  {id:65, f:"https://drive.google.com/uc?export=view&id=15kMAvfb6Q1apDjvhnI0XCO7fHuYWxFE3", r:"https://drive.google.com/uc?export=view&id=1G-XQ2awJSvSFt1cJnf1ImrvRh6R1qza3", desc:"Minifigura pintando en caballete en estudio de arte. Representa expresión creativa, proceso artístico y transformar el mundo con color."},
-  {id:66, f:"https://drive.google.com/uc?export=view&id=1Mmt-7MRAw7eKV5AtUPCvI9OxHZfvBy7f", r:"https://drive.google.com/uc?export=view&id=1MlZOplHt3ZOcvBlF82Z0Vs3drGWM-hg5", desc:"Globo aerostático vibrante sobre campos al amanecer. Representa elevación, perspectiva desde arriba y libertad de volar."},
-  {id:67, f:"https://drive.google.com/uc?export=view&id=1jzBJyF2LTQmB4bHroOaC2X5C500NahAG", r:"https://drive.google.com/uc?export=view&id=1q7DxKVfc6vWnsworWOpDqpSUh0y-KIw1", desc:"Freddie Mercury en escenario LEGO con micrófono y público. Representa performance, carisma desbordante y entrega total al arte."},
-];
-
-function randomCard(exclude=[]) {
-  const pool = SSP_CARDS.filter(c => !exclude.includes(c.id));
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
-// ── JUEGO STATE ──
-let juegoState = {
-  turno: 1,  // 1=personaje, 2=ia1, 3=obstaculo, 4=ia2, 5=deseo
-  cards: {},  // {1: cardId, 2: cardId, 3: cardId, 4: cardId, 5: cardId}
-  metaphors: {}, // {1: texto, 3: texto, 5: texto}
-  iaFragments: {}, // {2: texto, 4: texto}
-  storyComplete: false
-};
-
-function renderJuegoStage(saved) {
-  // Restore state if saved
-  if (saved.juegoState) juegoState = saved.juegoState;
-
-  const turnoLabels = [
-    {num:1, tipo:'emprendedor', emoji:'🧙', title:'El Personaje', sub:'Elige una carta que represente a tu cliente'},
-    {num:2, tipo:'ia', emoji:'🤖', title:'La IA continúa...', sub:'La IA elige una carta y expande la historia'},
-    {num:3, tipo:'emprendedor', emoji:'🐉', title:'El Obstáculo', sub:'Elige la carta que representa lo que lo frena'},
-    {num:4, tipo:'ia', emoji:'🤖', title:'La IA continúa...', sub:'La IA elige una carta y profundiza la historia'},
-    {num:5, tipo:'emprendedor', emoji:'⭐', title:'El Deseo Secreto', sub:'Elige la carta que representa su sueño oculto'},
-  ];
-
-  const steps = turnoLabels.map(t => {
-    const isDone = juegoState.turno > t.num;
-    const isActive = juegoState.turno === t.num;
-    const isIA = t.tipo === 'ia';
-    return `<div class="juego-step ${isDone?'done':isActive?'active':isIA?'ia':''}"></div>`;
-  }).join('');
-
-  let turnosHTML = turnoLabels.map(t => {
-    const isDone = juegoState.turno > t.num;
-    const isActive = juegoState.turno === t.num;
-    const isIA = t.tipo === 'ia';
-
-    let inner = `<div class="turno-header">
-      <span class="turno-badge ${isIA?'ia':'emprendedor'}">${isIA?'IA':'Tú'}</span>
-      <div><div class="turno-title">${t.emoji} ${t.title}</div><div class="turno-subtitle">${t.sub}</div></div>
-    </div>`;
-
-    if (isIA) {
-      if (isDone && juegoState.cards[t.num]) {
-        const card = SSP_CARDS.find(c => c.id === juegoState.cards[t.num]);
-        inner += `<div class="ia-card-reveal">
-          <div class="ia-card-img"><img src="${card?.f||''}" alt="Carta IA"></div>
-          <div class="ia-card-text">Carta #${card?.id} elegida por la IA</div>
-        </div>
-        <div class="ia-story-fragment">${juegoState.iaFragments[t.num]||''}</div>`;
-      } else if (isActive) {
-        inner += `<button class="btn-juego btn-juego-ia" onclick="iaJugarTurno(${t.num})" id="btn-ia-turno-${t.num}">
-          🤖 La IA juega su turno
-        </button>`;
-      }
-    } else {
-      if (isDone && juegoState.cards[t.num]) {
-        const card = SSP_CARDS.find(c => c.id === juegoState.cards[t.num]);
-        inner += `<div class="selected-card-row">
-          <div class="selected-card-mini"><img src="${card?.f||''}" alt="Carta ${card?.id}"></div>
-          <span style="font-size:.82rem;color:var(--jade)">Carta #${card?.id} — ${juegoState.metaphors[t.num]||''}</span>
-        </div>`;
-      } else if (isActive) {
-        inner += `<div class="juego-cards-grid" id="juego-grid-${t.num}">
-          ${SSP_CARDS.map(c => `<div class="juego-card ${juegoState.cards[t.num]===c.id?'selected':''}" onclick="juegoSelectCard(${t.num},${c.id})">
-            <img src="${c.f}" alt="Carta ${c.id}" loading="lazy">
-          </div>`).join('')}
-        </div>
-        ${juegoState.cards[t.num] ? `
-        <div class="field-group">
-          <label class="field-label">¿Qué ves en esta carta? ¿Qué te evoca?</label>
-          <textarea class="juego-metaphor field-input" id="metaphor-${t.num}" rows="2" placeholder="Describe lo que ves y por qué elegiste esta carta...">${juegoState.metaphors[t.num]||''}</textarea>
-        </div>
-        <button class="btn-juego btn-juego-primary" onclick="juegoConfirmarTurno(${t.num})">Confirmar y continuar →</button>
-        ` : ''}`;
-      }
-    }
-
-    return `<div class="juego-turno ${isActive?'active':''} ${isDone?'done':''} ${isIA?'ia-turno':''}">${inner}</div>`;
-  }).join('');
-
-  return `<div class="juego-container">
-    <div class="juego-progress">${steps}</div>
-    ${turnosHTML}
-    ${juegoState.storyComplete ? `<button class="btn-ai" id="btn-ai-historia" onclick="runAI('historia')">✦ Generar Mapa Emocional Completo</button>
-    <button class="btn-regenerate ${saved.aiResult?'visible':''}" id="btn-regen-historia" onclick="regenAI('historia')">↺ Regenerar</button>` : ''}
-  </div>`;
-}
-
-window.juegoSelectCard = (turno, cardId) => {
-  juegoState.cards[turno] = cardId;
-  // Re-render just the grid
-  const grid = document.getElementById(`juego-grid-${turno}`);
-  if (grid) {
-    grid.querySelectorAll('.juego-card').forEach((el, i) => {
-      el.classList.toggle('selected', SSP_CARDS[i]?.id === cardId);
-    });
-  }
-  // Show metaphor input if not visible
-  renderStage(currentStage);
-};
-
-window.juegoConfirmarTurno = (turno) => {
-  const metaphorEl = document.getElementById(`metaphor-${turno}`);
-  if (!metaphorEl || !metaphorEl.value.trim()) { showToast('Escribe qué ves en la carta'); return; }
-  if (!juegoState.cards[turno]) { showToast('Elige una carta primero'); return; }
-  juegoState.metaphors[turno] = metaphorEl.value.trim();
-  juegoState.turno = turno + 1;
-  if (!journeyData['historia']) journeyData['historia'] = {};
-  journeyData['historia'].juegoState = juegoState;
-  saveLocal();
-  renderStage(currentStage);
-};
-
-window.iaJugarTurno = async (turno) => {
-  const btn = document.getElementById(`btn-ia-turno-${turno}`);
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> La IA está jugando...'; }
-
-  const e1 = journeyData['producto'] || {};
-  const e3 = journeyData['segmento_revelado'] || {};
-  const card1 = SSP_CARDS.find(c => c.id === juegoState.cards[1]);
-  const card3 = turno === 4 ? SSP_CARDS.find(c => c.id === juegoState.cards[3]) : null;
-
-  // Pick random card for IA (exclude already used)
-  const usedIds = Object.values(juegoState.cards).filter(Boolean);
-  const iaCard = randomCard(usedIds);
-  juegoState.cards[turno] = iaCard.id;
-
-  const contextSoFar = Object.keys(juegoState.metaphors).map(t =>
-    `Carta ${t} (${t=='1'?'Personaje':t=='3'?'Obstáculo':'Deseo'}): ${juegoState.metaphors[t]}`
-  ).join('\n');
-
-  const fragmentAnterior = juegoState.iaFragments[2] ? `Fragmento anterior de la historia: ${juegoState.iaFragments[2]}` : '';
-
-  const systemPrompt = 'Eres un narrador de historias fantásticas colaborando con un emprendedor en la metodología SSP.' +
-    '\n\nContexto del negocio:' +
-    '\n- Producto: ' + (e1.nombre||'') + ' — ' + (e1.descripcion||'') +
-    '\n- Segmento revelado: ' + (e3.selectedSegmentText||'') +
-    '\n\nEl emprendedor ha elegido cartas SSP y descrito lo que ve. Tú debes:' +
-    '\n1. Tomar la carta aleatoria que te tocó (#' + iaCard.id + ') e interpretarla emocionalmente (no literalmente)' +
-    '\n2. Escribir UN fragmento corto de historia (máximo 80 palabras) que continúe la narrativa' +
-    '\n3. El fragmento debe conectar la carta del emprendedor con la tuya de forma poética' +
-    '\n\nContexto de la historia hasta ahora:\n' + contextSoFar +
-    '\n' + fragmentAnterior +
-    '\n\nResponde SOLO con este JSON:' +
-    '\n{"fragmento":"el fragmento de historia continuado, máximo 80 palabras, fantasioso y metafórico"}';
-
-  try {
-    const resp = await fetch('https://anthropicproxy-z4dcljw5oa-uc.a.run.app', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5',
-        max_tokens: 300,
-        system: systemPrompt,
-        messages: [{role: 'user', content: [
-          {type: 'image', source: {type: 'url', url: iaCard.f}},
-          {type: 'text', text: `La carta aleatoria que me tocó es la #${iaCard.id}: ${iaCard.desc}. Continúa la historia usando esta imagen como inspiración visual.`}
-        ]}]
-      })
-    });
-    const data = await resp.json();
-    const raw = data.content?.[0]?.text || '{}';
-    let parsed;
-    try {
-      const clean = raw
-        .replace(/```json|```/g,'')
-        .replace(/[‘’]/g,"'")
-        .replace(/[“”]/g,'"')
-        .replace(/[–—]/g,'-')
-        .trim();
-      parsed = JSON.parse(clean);
-    } catch(e) {
-      // Si falla el parse, intentar extraer JSON con regex
-      const match = raw.match(/\{[\s\S]*\}/);
-      if (match) {
-        try {
-          parsed = JSON.parse(match[0]);
-        } catch(e2) {
-          showToast('Error al procesar — presiona Regenerar');
-          if (btn) { btn.disabled = false; btn.innerHTML = stage ? stage.aiButton : 'Regenerar'; }
-          return;
-        }
-      } else {
-        showToast('Error al procesar — presiona Regenerar');
-        if (btn) { btn.disabled = false; btn.innerHTML = stage ? stage.aiButton : 'Regenerar'; }
-        return;
-      }
-    }
-    juegoState.iaFragments[turno] = parsed.fragmento || '';
-  } catch(e) {
-    juegoState.iaFragments[turno] = 'La historia continúa en las sombras...';
-    console.error(e);
-  }
-
-  juegoState.turno = turno + 1;
-  if (juegoState.turno > 5) juegoState.storyComplete = true;
-  if (!journeyData['historia']) journeyData['historia'] = {};
-  journeyData['historia'].juegoState = juegoState;
-  saveLocal();
-  renderStage(currentStage);
-};
-
-// Override runAI for historia to use juego state
-const _originalRunAI = window.runAI;
-window.runAI = async (stageId) => {
-  if (stageId !== 'historia') { return _originalRunAI(stageId); }
-
-  if (!juegoState.storyComplete) { showToast('Completa los 5 turnos primero'); return; }
-
-  const btn = document.getElementById('btn-ai-historia');
-  const regen = document.getElementById('btn-regen-historia');
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Generando mapa emocional...'; }
-
-  const e1 = journeyData['producto'] || {};
-  const e3 = journeyData['segmento_revelado'] || {};
-
-  const storyContext = [
-    `Turno 1 — Personaje (carta #${juegoState.cards[1]}): "${juegoState.metaphors[1]}"`,
-    `Turno 2 — IA (carta #${juegoState.cards[2]}): "${juegoState.iaFragments[2]}"`,
-    `Turno 3 — Obstáculo (carta #${juegoState.cards[3]}): "${juegoState.metaphors[3]}"`,
-    `Turno 4 — IA (carta #${juegoState.cards[4]}): "${juegoState.iaFragments[4]}"`,
-    `Turno 5 — Deseo Secreto (carta #${juegoState.cards[5]}): "${juegoState.metaphors[5]}"`,
-  ].join('\n');
-
-  const systemPrompt = 'Eres un estratega emocional especialista en SSP (Smart Serious Play).' +
-    '\n\nUna historia colaborativa entre un emprendedor y la IA ha sido co-creada usando cartas SSP. A partir de esa historia debes extraer el mapa emocional del cliente del emprendedor.' +
-    '\n\nContexto del negocio:' +
-    '\n- Producto: ' + (e1.nombre||'') + ' — ' + (e1.descripcion||'') +
-    '\n- Segmento revelado: ' + (e3.selectedSegmentText||'') +
-    '\n\nHistoria co-creada:\n' + storyContext +
-    '\n\nExtrae exactamente:' +
-    '\n- 3 DOLORES (lo que carga, lo que pesa)' +
-    '\n- 3 FRUSTRACIONES (lo que intenta y falla)' +
-    '\n- 3 MIEDOS (lo que paraliza en silencio)' +
-    '\n\nPara cada uno: insight (verdad no dicha) y accionador (accion/recurso/alianza concreta).' +
-    '\n\nResponde SOLO con este JSON:' +
-    '\n{"historia":"resumen poetico de la historia co-creada en 100 palabras","elementos":[{"tipo":"DOLOR","nombre":"nombre corto","descripcion":"descripcion empatica","insight":"verdad no dicha","accionador":"accion concreta"},{"tipo":"DOLOR","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"DOLOR","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"FRUSTRACION","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"FRUSTRACION","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"FRUSTRACION","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"MIEDO","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"MIEDO","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"MIEDO","nombre":"","descripcion":"","insight":"","accionador":""}]}';
-
-  try {
-    const resp = await fetch('https://anthropicproxy-z4dcljw5oa-uc.a.run.app', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5',
-        max_tokens: 2000,
-        system: systemPrompt,
-        messages: [{role: 'user', content: 'Genera el mapa emocional completo de la historia.'}]
-      })
-    });
-    const data = await resp.json();
-    const raw = data.content?.[0]?.text || '{}';
-    let parsed;
-    try {
-      const clean = raw
-        .replace(/```json|```/g,'')
-        .replace(/[‘’]/g,"'")
-        .replace(/[“”]/g,'"')
-        .replace(/[–—]/g,'-')
-        .trim();
-      parsed = JSON.parse(clean);
-    } catch(e) {
-      // Si falla el parse, intentar extraer JSON con regex
-      const match = raw.match(/\{[\s\S]*\}/);
-      if (match) {
-        try {
-          parsed = JSON.parse(match[0]);
-        } catch(e2) {
-          showToast('Error al procesar — presiona Regenerar');
-          if (btn) { btn.disabled = false; btn.innerHTML = stage ? stage.aiButton : 'Regenerar'; }
-          return;
-        }
-      } else {
-        showToast('Error al procesar — presiona Regenerar');
-        if (btn) { btn.disabled = false; btn.innerHTML = stage ? stage.aiButton : 'Regenerar'; }
-        return;
-      }
-    }
-
-    if (!journeyData['historia']) journeyData['historia'] = {};
-    journeyData['historia'].aiResult = `📖 HISTORIA CO-CREADA\n\n${parsed.historia}`;
-    journeyData['historia'].accionadores = parsed.elementos.map(e => ({
-      tipo: e.tipo, nombre: e.nombre, insight: e.insight, accionador: e.accionador
-    }));
-    saveLocal();
-    if (regen) regen.classList.add('visible');
-    renderStage(currentStage);
-  } catch(e) {
-    showToast('Error al generar mapa emocional');
-    console.error(e);
-  }
-
-  if (btn) { btn.disabled = false; btn.innerHTML = '✦ Generar Mapa Emocional Completo'; }
-};
-
-
-// ── HISTORIA STAGE ──
-const HISTORIA_PARTES = [
-  {
-    id: 'personaje',
-    emoji: '🧙',
-    title: 'El Personaje',
-    ejemplo: 'Ej: "Mira es una guardiana de mapas en un reino donde nadie sabe leer. Viste de colores imposibles y habla con los árboles antes de tomar decisiones."',
-    placeholder: 'Cuéntame quién es tu personaje, cómo se llama, qué hace en ese mundo imposible...'
-  },
-  {
-    id: 'mundo',
-    emoji: '🌍',
-    title: 'Su Mundo',
-    ejemplo: 'Ej: "Vive en una ciudad donde los relojes corren al revés, cada puerta lleva a un lugar diferente y el sol sale dos veces al día pero nadie sabe cuándo."',
-    placeholder: '¿Cómo es el lugar donde vive? ¿Qué reglas raras tiene ese mundo?...'
-  },
-  {
-    id: 'sombra',
-    emoji: '🌑',
-    title: 'La Sombra',
-    ejemplo: 'Ej: "Carga con un mapa que nunca termina de dibujarse. Cada vez que cree haberlo completado, aparece un territorio nuevo que lo hace sentir que no avanza."',
-    placeholder: '¿Qué carga invisible arrastra el personaje? ¿Qué le pesa aunque nunca lo diga?...'
-  },
-  {
-    id: 'obstaculo',
-    emoji: '🐉',
-    title: 'El Obstáculo',
-    ejemplo: 'Ej: "Cada vez que intenta cruzar el puente hacia el Gran Mercado, aparece un dragón que habla en idiomas que nadie entiende y exige respuestas que nadie tiene."',
-    placeholder: '¿Qué monstruo, muro o laberinto aparece siempre que intenta avanzar?...'
-  },
-  {
-    id: 'deseo',
-    emoji: '⭐',
-    title: 'El Deseo Secreto',
-    ejemplo: 'Ej: "En silencio, antes de dormir, sueña con el día en que su mapa sea el más valioso del reino. Que alguien llegue a ella y le diga: sin ti, todos estaríamos perdidos."',
-    placeholder: '¿Qué sueña en silencio el personaje? ¿Qué pasaría si el obstáculo desapareciera?...'
-  }
-];
-
-let historiaPhotos = {}; // {personaje: base64, mundo: base64, ...}
-
-function renderHistoriaStage(saved) {
-  const partes = HISTORIA_PARTES.map(p => {
-    const hasFoto = saved['foto_' + p.id] || historiaPhotos[p.id];
-    return `<div class="historia-parte">
-      <div class="historia-parte-header">
-        <span class="historia-parte-emoji">${p.emoji}</span>
-        <span class="historia-parte-title">${p.title}</span>
-      </div>
-      <div class="historia-ejemplo">
-        <span class="historia-ejemplo-icon">💡</span>
-        <span class="historia-ejemplo-text">${p.ejemplo}</span>
-      </div>
-      <div class="historia-body">
-        <div class="historia-foto-zone">
-          <div class="historia-foto-upload ${hasFoto?'has-img':''}" id="hfoto-${p.id}">
-            <input type="file" accept="image/*" capture="environment" onchange="historiaFotoChange(event,'${p.id}')">
-            <div class="foto-placeholder">
-              <span>📸</span>
-              <span style="font-size:.65rem">Sube tu carta</span>
-            </div>
-            <img src="${saved['foto_'+p.id]||''}" alt="" id="hfoto-img-${p.id}">
-          </div>
-          <div class="historia-foto-label">${hasFoto?'✓ Carta subida':'Foto de la carta'}</div>
-        </div>
-        <div class="historia-texto">
-          <textarea id="htexto-${p.id}" placeholder="${p.placeholder}">${saved['texto_'+p.id]||''}</textarea>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-
-  return `<div class="historia-container">${partes}</div>`;
-}
-
-window.historiaFotoChange = (event, parteId) => {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async (ev) => {
-    const b64full = ev.target.result;
-    // Compress
-    try {
-      const img = new Image();
-      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = b64full; });
-      const canvas = document.createElement('canvas');
-      const scale = Math.min(1, 600 / Math.max(img.width, img.height));
-      canvas.width = Math.floor(img.width * scale);
-      canvas.height = Math.floor(img.height * scale);
-      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      const compressed = canvas.toDataURL('image/jpeg', 0.6);
-      historiaPhotos[parteId] = compressed.split(',')[1];
-      // Update UI
-      const zone = document.getElementById('hfoto-' + parteId);
-      const imgEl = document.getElementById('hfoto-img-' + parteId);
-      if (zone) zone.classList.add('has-img');
-      if (imgEl) { imgEl.src = compressed; imgEl.style.display = 'block'; }
-      if (!journeyData['historia']) journeyData['historia'] = {};
-      journeyData['historia']['foto_' + parteId] = compressed;
-      saveLocal();
-      showToast('📸 Carta ' + parteId + ' guardada');
-    } catch(e) { console.error(e); }
-  };
-  reader.readAsDataURL(file);
-};
-
-// Save historia text fields
-function saveHistoriaTextos() {
-  if (!journeyData['historia']) journeyData['historia'] = {};
-  HISTORIA_PARTES.forEach(p => {
-    const el = document.getElementById('htexto-' + p.id);
-    if (el) journeyData['historia']['texto_' + p.id] = el.value.trim();
-  });
-}
-
-// Override runAI for historia mode
-const _origRunAI = window.runAI;
-window.runAI = async (stageId) => {
-  if (stageId !== 'historia') return _origRunAI(stageId);
-
-  // Save current text
-  saveHistoriaTextos();
-
-  const btn = document.getElementById('btn-ai-historia');
-  const regen = document.getElementById('btn-regen-historia');
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Generando historia y mapa emocional...'; }
-
-  const e1 = journeyData['producto'] || {};
-  const e3 = journeyData['segmento_revelado'] || {};
-  const h = journeyData['historia'] || {};
-
-  // Build context from 5 partes
-  const partesContext = HISTORIA_PARTES.map(p => {
-    const texto = h['texto_' + p.id] || '';
-    return p.emoji + ' ' + p.title + ': ' + texto;
-  }).join('\n');
-
-  const systemPrompt = [
-    'Eres un escritor creativo y estratega emocional especialista en SSP (Smart Serious Play).',
-    'Un emprendedor ha construido los elementos de una historia fantasiosa sobre su cliente usando cartas SSP.',
-    'Contexto del negocio:',
-    '- Producto: ' + (e1.nombre||'') + ' - ' + (e1.descripcion||''),
-    '- Segmento revelado: ' + (e3.selectedSegmentText||''),
-    'Elementos de la historia escritos por el emprendedor:',
-    partesContext,
-    'TU TAREA TIENE DOS MOMENTOS:',
-    'MOMENTO 1 - LA HISTORIA:',
-    'Toma los elementos crudos del emprendedor y transformalos en una historia corta (150 palabras max), completamente fantasiosa, emotiva y metaforizada. Dale drama, tension y un destello de esperanza al final.',
-    'MOMENTO 2 - MAPA EMOCIONAL:',
-    'De esa historia extrae exactamente 3 dolores, 3 frustraciones y 3 miedos del cliente real.',
-    'Para cada uno genera: insight (verdad no dicha) y accionador (accion/recurso/alianza concreta).',
-    'Responde SOLO con este JSON exacto (sin texto adicional):',
-    '{"historia":"texto completo de la historia","elementos":[{"tipo":"DOLOR","nombre":"nombre corto","descripcion":"descripcion empatica","insight":"verdad no dicha","accionador":"accion concreta"},{"tipo":"DOLOR","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"DOLOR","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"FRUSTRACION","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"FRUSTRACION","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"FRUSTRACION","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"MIEDO","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"MIEDO","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"MIEDO","nombre":"","descripcion":"","insight":"","accionador":""}]}'
-  ].join('\n\n');
-
-    // Build user content with images
-  const userContent = [];
-
-  // Add images if available
-  HISTORIA_PARTES.forEach(p => {
-    const foto = historiaPhotos[p.id] || (h['foto_'+p.id]?.split(',')[1]);
-    if (foto) {
-      userContent.push({type:'image', source:{type:'base64', media_type:'image/jpeg', data:foto}});
-    }
-  });
-
-  userContent.push({type:'text', text:'Estos son los elementos de mi historia y las fotos de las cartas SSP que elegí para cada parte. Genera la historia y el mapa emocional.'});
-
-  try {
-    const resp = await fetch('https://anthropicproxy-z4dcljw5oa-uc.a.run.app', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5',
-        max_tokens: 2000,
-        system: systemPrompt,
-        messages: [{role: 'user', content: userContent}]
-      })
-    });
-
-    if (!resp.ok) throw new Error('Error ' + resp.status);
-    const data = await resp.json();
-    const raw = data.content && data.content[0] ? data.content[0].text : '{}';
-    let parsed;
-    try {
-      const clean = raw
-        .replace(/```json|```/g,'')
-        .replace(/[‘’]/g,"'")
-        .replace(/[“”]/g,'"')
-        .replace(/[–—]/g,'-')
-        .trim();
-      parsed = JSON.parse(clean);
-    } catch(e) {
-      // Si falla el parse, intentar extraer JSON con regex
-      const match = raw.match(/\{[\s\S]*\}/);
-      if (match) {
-        try {
-          parsed = JSON.parse(match[0]);
-        } catch(e2) {
-          showToast('Error al procesar — presiona Regenerar');
-          if (btn) { btn.disabled = false; btn.innerHTML = stage ? stage.aiButton : 'Regenerar'; }
-          return;
-        }
-      } else {
-        showToast('Error al procesar — presiona Regenerar');
-        if (btn) { btn.disabled = false; btn.innerHTML = stage ? stage.aiButton : 'Regenerar'; }
-        return;
-      }
-    }
-
-    if (!journeyData['historia']) journeyData['historia'] = {};
-    journeyData['historia'].aiResult = 'HISTORIA\n\n' + parsed.historia;
-    journeyData['historia'].accionadores = parsed.elementos.map(e => ({
-      tipo: e.tipo === 'DOLOR' ? '💔 DOLOR' : e.tipo === 'FRUSTRACION' ? '😤 FRUSTRACIÓN' : '😨 MIEDO',
-      nombre: e.nombre,
-      insight: e.insight,
-      accionador: e.accionador
-    }));
-    saveLocal();
-    if (regen) regen.classList.add('visible');
-    renderStage(currentStage);
-
-  } catch(e) {
-    showToast('Error al generar — intenta de nuevo');
-    console.error(e);
-  }
-
-  if (btn) { btn.disabled = false; btn.innerHTML = '✦ Generar Historia y Mapa Emocional'; }
-};
-
-
-// ── CAUSAL STAGE ──
-let causalMatrizPhoto = null;
-
-function renderCausalStage(saved) {
-  const hasFoto = saved.matrizFoto || causalMatrizPhoto;
-  return '<div class="causal-container">' +
-
-    // Foto de la matriz
-    '<div class="causal-foto-zone ' + (hasFoto?'has-img':'') + '" id="causal-foto-zone">' +
-    '<input type="file" accept="image/*" capture="environment" onchange="causalFotoChange(event)">' +
-    '<div class="causal-placeholder">' +
-    '<span class="icon">📸</span>' +
-    '<span style="font-size:.9rem;color:var(--muted)">Sube la foto de tu matriz causal llena</span>' +
-    '<span style="font-size:.75rem;color:var(--muted);opacity:.7;margin-top:.25rem;display:block">Fotografía la matriz física que llenaste con el facilitador</span>' +
-    '</div>' +
-    '<img class="causal-foto-preview ' + (hasFoto?'visible':'') + '" id="causal-foto-preview" src="' + (saved.matrizFoto||'') + '" alt="">' +
-    '<div class="causal-change">✓ Matriz cargada · toca para cambiar</div>' +
-    '</div>' +
-
-    // Campo 1: accionador ganador
-    '<div class="causal-field">' +
-    '<div class="causal-field-header">' +
-    '<span class="causal-field-emoji">🏆</span>' +
-    '<span class="causal-field-title">Accionador con mayor grado de conectividad</span>' +
-    '</div>' +
-    '<div class="causal-field-ejemplo">💡 Ej: "Crear rituales de cocina participativos donde los clientes cocinen junto a cocineros tradicionistas"</div>' +
-    '<textarea id="causal-ganador" rows="3" placeholder="Escribe el accionador que tuvo más conexiones en tu matriz...">' + (saved.ganador||'') + '</textarea>' +
-    '</div>' +
-
-    // Campo 2: propuesta de valor
-    '<div class="causal-field">' +
-    '<div class="causal-field-header">' +
-    '<span class="causal-field-emoji">🎯</span>' +
-    '<span class="causal-field-title">Variable que representa tu Propuesta de Valor</span>' +
-    '</div>' +
-    '<div class="causal-field-ejemplo">💡 Ej: "La experiencia de reconectar con tu identidad y tus raíces a través del sabor y la memoria"</div>' +
-    '<textarea id="causal-propuesta" rows="3" placeholder="¿Qué variable o concepto central emerge de ese accionador ganador?">' + (saved.propuesta_variable||'') + '</textarea>' +
-    '</div>' +
-
-    '</div>';
-}
-
-window.causalFotoChange = async (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async (ev) => {
-    const b64full = ev.target.result;
-    try {
-      const img = new Image();
-      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = b64full; });
-      const canvas = document.createElement('canvas');
-      const scale = Math.min(1, 800 / Math.max(img.width, img.height));
-      canvas.width = Math.floor(img.width * scale);
-      canvas.height = Math.floor(img.height * scale);
-      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      const compressed = canvas.toDataURL('image/jpeg', 0.7);
-      causalMatrizPhoto = compressed.split(',')[1];
-      const zone = document.getElementById('causal-foto-zone');
-      const preview = document.getElementById('causal-foto-preview');
-      if (zone) zone.classList.add('has-img');
-      if (preview) { preview.src = compressed; preview.classList.add('visible'); }
-      if (!journeyData['modelo_causal']) journeyData['modelo_causal'] = {};
-      journeyData['modelo_causal'].matrizFoto = compressed;
-      saveLocal();
-      showToast('📸 Matriz guardada');
-    } catch(e) { console.error(e); }
-  };
-  reader.readAsDataURL(file);
-};
-
-window.saveCausalStage = async () => {
-  const ganador = document.getElementById('causal-ganador')?.value.trim();
-  const propuesta = document.getElementById('causal-propuesta')?.value.trim();
-  if (!ganador) { showToast('Escribe el accionador ganador'); return; }
-  if (!propuesta) { showToast('Escribe la variable de propuesta de valor'); return; }
-  if (!journeyData['modelo_causal']) journeyData['modelo_causal'] = {};
-  journeyData['modelo_causal'].ganador = ganador;
-  journeyData['modelo_causal'].propuesta_variable = propuesta;
-  journeyData['modelo_causal'].completed = true;
-  journeyData['modelo_causal'].completedSummary = 'Accionador ganador: ' + ganador + '\n\nPropuesta de valor: ' + propuesta;
-  saveLocal();
-  document.getElementById('btn-next').disabled = false;
-  renderSidebar();
-  showToast('✓ Modelo causal guardado');
-};
-
-
 </script>
-
-<!-- SSP Test floating button -->
-<a class="btn-ssp-test" style="display:none;" href="https://azuniga09.github.io/ssp-test" target="_blank">
-  <span class="test-emoji">🎮</span>
-  <span class="test-text">
-    ¿Qué jugador eres?
-    <span class="test-sub">Test SSP Player</span>
-  </span>
-</a>
-
 </body>
 </html>
