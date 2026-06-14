@@ -1301,7 +1301,32 @@ window.iaJugarTurno = async (turno) => {
     });
     const data = await resp.json();
     const raw = data.content?.[0]?.text || '{}';
-    const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    let parsed;
+    try {
+      const clean = raw
+        .replace(/```json|```/g,'')
+        .replace(/[‘’]/g,"'")
+        .replace(/[“”]/g,'"')
+        .replace(/[–—]/g,'-')
+        .trim();
+      parsed = JSON.parse(clean);
+    } catch(e) {
+      // Si falla el parse, intentar extraer JSON con regex
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (match) {
+        try {
+          parsed = JSON.parse(match[0]);
+        } catch(e2) {
+          showToast('Error al procesar — presiona Regenerar');
+          if (btn) { btn.disabled = false; btn.innerHTML = stage ? stage.aiButton : 'Regenerar'; }
+          return;
+        }
+      } else {
+        showToast('Error al procesar — presiona Regenerar');
+        if (btn) { btn.disabled = false; btn.innerHTML = stage ? stage.aiButton : 'Regenerar'; }
+        return;
+      }
+    }
     juegoState.iaFragments[turno] = parsed.fragmento || '';
   } catch(e) {
     juegoState.iaFragments[turno] = 'La historia continúa en las sombras...';
@@ -1365,7 +1390,32 @@ window.runAI = async (stageId) => {
     });
     const data = await resp.json();
     const raw = data.content?.[0]?.text || '{}';
-    const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    let parsed;
+    try {
+      const clean = raw
+        .replace(/```json|```/g,'')
+        .replace(/[‘’]/g,"'")
+        .replace(/[“”]/g,'"')
+        .replace(/[–—]/g,'-')
+        .trim();
+      parsed = JSON.parse(clean);
+    } catch(e) {
+      // Si falla el parse, intentar extraer JSON con regex
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (match) {
+        try {
+          parsed = JSON.parse(match[0]);
+        } catch(e2) {
+          showToast('Error al procesar — presiona Regenerar');
+          if (btn) { btn.disabled = false; btn.innerHTML = stage ? stage.aiButton : 'Regenerar'; }
+          return;
+        }
+      } else {
+        showToast('Error al procesar — presiona Regenerar');
+        if (btn) { btn.disabled = false; btn.innerHTML = stage ? stage.aiButton : 'Regenerar'; }
+        return;
+      }
+    }
 
     if (!journeyData['historia']) journeyData['historia'] = {};
     journeyData['historia'].aiResult = `📖 HISTORIA CO-CREADA\n\n${parsed.historia}`;
@@ -1567,7 +1617,32 @@ window.runAI = async (stageId) => {
     if (!resp.ok) throw new Error('Error ' + resp.status);
     const data = await resp.json();
     const raw = data.content && data.content[0] ? data.content[0].text : '{}';
-    const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    let parsed;
+    try {
+      const clean = raw
+        .replace(/```json|```/g,'')
+        .replace(/[‘’]/g,"'")
+        .replace(/[“”]/g,'"')
+        .replace(/[–—]/g,'-')
+        .trim();
+      parsed = JSON.parse(clean);
+    } catch(e) {
+      // Si falla el parse, intentar extraer JSON con regex
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (match) {
+        try {
+          parsed = JSON.parse(match[0]);
+        } catch(e2) {
+          showToast('Error al procesar — presiona Regenerar');
+          if (btn) { btn.disabled = false; btn.innerHTML = stage ? stage.aiButton : 'Regenerar'; }
+          return;
+        }
+      } else {
+        showToast('Error al procesar — presiona Regenerar');
+        if (btn) { btn.disabled = false; btn.innerHTML = stage ? stage.aiButton : 'Regenerar'; }
+        return;
+      }
+    }
 
     if (!journeyData['historia']) journeyData['historia'] = {};
     journeyData['historia'].aiResult = 'HISTORIA\n\n' + parsed.historia;
