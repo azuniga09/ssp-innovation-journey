@@ -321,16 +321,17 @@ function loop() {
 
 function showGameOver() {
   cancelAnimationFrame(animId);
+  const scoreNormal = score;
   document.getElementById('overlay').innerHTML=`
     <div class="overlay-logo">Smart Serious Play</div>
     <div class="overlay-title">¡Bien jugado!</div>
     <div class="final-label">Tu puntuación</div>
-    <div class="final-score">${score} pts</div>
+    <div class="final-score">${scoreNormal} pts</div>
     <div class="overlay-sub">¿Notaste cómo tu cerebro fluía con los controles normales?<br><br>
     <strong style="color:#4ECCA3">Ahora viene el verdadero reto.</strong><br>
-    Juega con los controles al revés y siente la diferencia.</div>
+    Juega con los controles al revés y siente la diferencia en tu cerebro.</div>
     <button class="btn-start" id="btn-start">Jugar de nuevo</button>
-    <a class="btn-reves" href="bici-al-reves.html" target="_blank">🚀 Ahora juega al revés</a>
+    <a class="btn-reves" href="bici-al-reves.html?normal=${scoreNormal}" target="_blank">🚀 Ahora juega al revés</a>
   `;
   document.getElementById('overlay').style.display='flex';
   document.getElementById('btn-start').addEventListener('click',startGame);

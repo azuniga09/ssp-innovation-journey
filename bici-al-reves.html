@@ -426,18 +426,41 @@ function loop() {
 // ── OVERLAYS ──
 function showGameOver() {
   cancelAnimationFrame(animId);
+  const diff = normalScore > 0 ? Math.round((1 - score/normalScore)*100) : 0;
   const msg = score < 200
     ? '😅 Tu cerebro aún está procesando el algoritmo invertido. ¡Normal! Así se siente aprender algo nuevo.'
     : score < 600
-    ? '🧠 ¡Tu cerebro está adaptándose! La incomodidad que sientes es exactamente el momento en que se reescribe el algoritmo.'
+    ? '🧠 ¡Tu cerebro está adaptándose! La incomodidad es el momento exacto en que se reescribe el algoritmo.'
     : '🔥 ¡Impresionante! Tu cerebro reescribió el algoritmo. Así funciona la creatividad real.';
+
+  const comparison = normalScore > 0 ? `
+    <div style="background:rgba(78,204,163,.08);border:1px solid rgba(78,204,163,.2);border-radius:12px;padding:1rem;width:100%;margin:.5rem 0">
+      <div style="font-size:.7rem;letter-spacing:.15em;color:#4ECCA3;text-transform:uppercase;margin-bottom:.75rem">🏆 Comparativa</div>
+      <div style="display:flex;justify-content:space-around;align-items:center;gap:1rem">
+        <div style="text-align:center">
+          <div style="font-size:.65rem;color:#8884a0;text-transform:uppercase;letter-spacing:.1em">Normal</div>
+          <div style="font-size:1.6rem;font-weight:700;color:#FF6B35">${normalScore}</div>
+          <div style="font-size:.65rem;color:#8884a0">pts</div>
+        </div>
+        <div style="font-size:1.5rem;color:#8884a0">vs</div>
+        <div style="text-align:center">
+          <div style="font-size:.65rem;color:#8884a0;text-transform:uppercase;letter-spacing:.1em">Al Revés</div>
+          <div style="font-size:1.6rem;font-weight:700;color:#4ECCA3">${score}</div>
+          <div style="font-size:.65rem;color:#8884a0">pts</div>
+        </div>
+      </div>
+      <div style="margin-top:.75rem;font-size:.78rem;color:#8884a0;border-top:1px solid rgba(255,255,255,.08);padding-top:.65rem">
+        ${diff > 0
+          ? '🧠 Tu cerebro perdió <strong style="color:#FF6B35">'+diff+'%</strong> de eficiencia al cambiar el algoritmo.'
+          : '🔥 ¡Tu cerebro al revés es igual de potente!'}
+      </div>
+    </div>` : '';
 
   document.getElementById('overlay').innerHTML = `
     <div class="overlay-logo">Smart Serious Play</div>
     <div class="overlay-title">Game Over</div>
-    <div class="final-label">Tu puntuación</div>
-    <div class="final-score">${score} pts</div>
-    <div class="overlay-sub">${msg}</div>
+    ${comparison}
+    <div class="overlay-sub" style="font-size:.78rem">${msg}</div>
     <button class="btn-start" id="btn-start">Intentar de nuevo</button>
   `;
   document.getElementById('overlay').style.display = 'flex';
