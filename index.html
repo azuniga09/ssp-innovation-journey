@@ -143,6 +143,57 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .toast{position:fixed;bottom:2rem;right:2rem;background:var(--surface2);border:1px solid var(--jade);color:var(--jade);padding:.75rem 1.25rem;border-radius:8px;font-size:.85rem;z-index:999;transform:translateY(100px);opacity:0;transition:all .3s;}
 .toast.show{transform:translateY(0);opacity:1;}
 @media(max-width:700px){.sidebar{display:none;}.main{margin-left:0;padding:1.25rem;}}
+
+/* ── JUEGO STAGE ── */
+.juego-container { display: flex; flex-direction: column; gap: 1.25rem; }
+.juego-turno { background: var(--surface2); border: 1.5px solid var(--border); border-radius: 12px; padding: 1.25rem; transition: all .2s; }
+.juego-turno.active { border-color: var(--jade); background: var(--jade-dim); }
+.juego-turno.done { border-color: rgba(78,204,163,.3); opacity: .85; }
+.juego-turno.ia-turno { border-color: rgba(124,111,205,.3); background: rgba(124,111,205,.06); }
+.juego-turno.ia-turno.active { border-color: var(--purple); background: rgba(124,111,205,.12); }
+.turno-header { display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; }
+.turno-badge { font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; padding: .25rem .6rem; border-radius: 20px; }
+.turno-badge.emprendedor { background: var(--jade-dim); color: var(--jade); }
+.turno-badge.ia { background: rgba(124,111,205,.2); color: var(--purple); }
+.turno-title { font-size: .9rem; font-weight: 600; color: var(--text); }
+.turno-subtitle { font-size: .78rem; color: var(--muted); margin-top: .15rem; }
+
+/* Card picker for juego */
+.juego-cards-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: .4rem; max-height: 260px; overflow-y: auto; margin-bottom: .75rem; }
+.juego-card { aspect-ratio: 3/4; border-radius: 7px; border: 2px solid var(--border); cursor: pointer; overflow: hidden; transition: all .15s; background: var(--surface2); }
+.juego-card:hover { border-color: var(--jade); transform: scale(1.03); }
+.juego-card.selected { border-color: var(--jade); box-shadow: 0 0 0 2px var(--jade); }
+.juego-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Selected card display */
+.selected-card-row { display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; }
+.selected-card-mini { width: 36px; height: 48px; border-radius: 5px; overflow: hidden; flex-shrink: 0; border: 1.5px solid var(--jade); }
+.selected-card-mini img { width: 100%; height: 100%; object-fit: cover; }
+
+/* IA card reveal */
+.ia-card-reveal { display: flex; align-items: center; gap: 1rem; padding: .75rem; background: rgba(124,111,205,.1); border-radius: 10px; margin-bottom: .75rem; }
+.ia-card-img { width: 48px; height: 64px; border-radius: 6px; overflow: hidden; border: 2px solid var(--purple); flex-shrink: 0; }
+.ia-card-img img { width: 100%; height: 100%; object-fit: cover; }
+.ia-card-text { font-size: .85rem; color: var(--text); line-height: 1.5; }
+.ia-story-fragment { font-family: 'Fraunces', serif; font-size: .95rem; font-style: italic; line-height: 1.7; color: var(--text); margin-top: .5rem; padding: .75rem; background: rgba(124,111,205,.08); border-radius: 8px; border-left: 3px solid var(--purple); }
+
+.juego-metaphor { width: 100%; background: none; border: none; outline: none; color: var(--text); font-family: 'Fraunces', serif; font-size: 1rem; font-style: italic; line-height: 1.6; resize: none; min-height: 60px; }
+.juego-metaphor::placeholder { color: var(--muted); opacity: .5; }
+
+.btn-juego { padding: .7rem 1.25rem; border-radius: 8px; font-size: .85rem; font-weight: 600; cursor: pointer; transition: all .15s; border: none; }
+.btn-juego-primary { background: var(--jade); color: var(--bg); }
+.btn-juego-primary:hover { opacity: .85; }
+.btn-juego-primary:disabled { opacity: .3; cursor: not-allowed; }
+.btn-juego-ia { background: var(--purple); color: white; }
+.btn-juego-ia:hover { opacity: .85; }
+.btn-juego-ia:disabled { opacity: .3; cursor: not-allowed; }
+
+.juego-progress { display: flex; gap: .4rem; margin-bottom: 1.25rem; }
+.juego-step { flex: 1; height: 4px; border-radius: 2px; background: var(--border); transition: background .3s; }
+.juego-step.done { background: var(--jade); }
+.juego-step.active { background: var(--purple); }
+.juego-step.ia { background: rgba(124,111,205,.4); }
+
 </style>
 </head>
 <body>
@@ -202,16 +253,8 @@ const STAGES = [
     outputMode:'segmentos'
   },
   {
-    id:'historia', num:4, title:'Historia Fantasiosa → Dolores, Insights y Accionadores', mode:'foto_ia',
-    prompt:'Elige cartas SSP y construye una historia fantástica donde tu cliente es el personaje principal. La IA extraerá los dolores, frustraciones y miedos reales — y sus accionadores.',
-    photoLabel:'📸 Sube la foto de tus cartas SSP para la historia',
-    questions:[
-      {key:'q1', label:'🧙 El Personaje — Dale un nombre y profesión fantástica', placeholder:'Ej: Mira, guardiana de mapas en un reino donde nadie sabe leer...', rows:2},
-      {key:'q2', label:'🌍 Su Mundo — ¿Cómo es el lugar donde vive? ¿Qué reglas tiene?', placeholder:'Describe ese mundo imposible y sus reglas...', rows:2},
-      {key:'q3', label:'🌑 La Sombra — ¿Qué carga arrastra aunque no lo diga?', placeholder:'Lo que lo persigue, lo que evita, su peso invisible...', rows:2},
-      {key:'q4', label:'🐉 El Obstáculo — ¿Qué monstruo o laberinto encuentra cada vez que avanza?', placeholder:'Lo que siempre le impide llegar a donde quiere...', rows:2},
-      {key:'q5', label:'⭐ El Deseo Secreto — ¿Qué sueña en silencio?', placeholder:'Su anhelo más profundo, lo que nunca dice en voz alta...', rows:2},
-    ],
+    id:'historia', num:4, title:'Historia Colaborativa → Dolores, Insights y Accionadores', mode:'juego',
+    prompt:'Co-crea una historia fantástica con la IA usando cartas SSP. Tú eliges 3 cartas, la IA elige 2 cartas aleatorias. Juntos construyen la historia de tu cliente.',
     aiButton:'✦ Generar Historia y Mapa Emocional',
     outputMode:'accionadores'
   },
@@ -310,7 +353,11 @@ function renderStage(idx) {
       </div>`).join('');
   }
 
-  if (stage.mode === 'foto_ia' || stage.mode === 'solo_ia') {
+  if (stage.mode === 'juego') {
+    html += renderJuegoStage(saved);
+  }
+
+  if (stage.mode === 'foto_ia' || stage.mode === 'solo_ia' || stage.mode === 'juego') {
     html += `<button class="btn-ai" id="btn-ai-${stage.id}" onclick="runAI('${stage.id}')">${stage.aiButton}</button>
     <button class="btn-regenerate ${saved.aiResult?'visible':''}" id="btn-regen-${stage.id}" onclick="regenAI('${stage.id}')">↺ Regenerar respuesta</button>`;
     html += renderAIResult(stage, saved);
@@ -721,6 +768,338 @@ function showToast(msg) {
 // ── INIT ──
 renderSidebar();
 renderStage(currentStage);
+
+// ── SSP CARDS (67 cartas con descripciones) ──
+const SSP_CARDS = [
+  {id:1, f:"https://drive.google.com/uc?export=view&id=1QqWNuU4ghhG6hCQn9r879AQf3JaZpLKP", r:"https://drive.google.com/uc?export=view&id=1LCElBrQQ6NPUqpdR2o7PxQ3sIBA0TJD1", desc:"Astronauta en el espacio rodeado de satélites y estrellas. Representa conexión, exploración y visión cósmica."},
+  {id:2, f:"https://drive.google.com/uc?export=view&id=1BRL-EuVCFbKLN-Sz3yjMQhYL1llAH3yx", r:"https://drive.google.com/uc?export=view&id=1oIqKBP9Gem6_fQXKfflal_L_HFDLnVQX", desc:"Cleopatra en un templo egipcio. Representa poder, identidad, legado y liderazgo femenino ancestral."},
+  {id:3, f:"https://drive.google.com/uc?export=view&id=1Ejqo_LI3Anq227d6saN7Z9WTj8aooh4E", r:"https://drive.google.com/uc?export=view&id=1uumAqbc_k1vZlWYygluAs5XuBzNb4KRo", desc:"Buda en entorno sereno con árboles y templo. Representa tranquilidad, espiritualidad y búsqueda interior."},
+  {id:4, f:"https://drive.google.com/uc?export=view&id=1gEW2yeDjOFr2JCEVM-fNwzareYL6t9_g", r:"https://drive.google.com/uc?export=view&id=1PxUZn0xtBegDy5Q53hYLZqJbh7DbZkpt", desc:"Explorador con binoculares en bosque lleno de flora y fauna. Representa descubrimiento, curiosidad y aventura."},
+  {id:5, f:"https://drive.google.com/uc?export=view&id=1xAYJP5191Ht9bYYO4fYeo_NEUPZT_5EC", r:"https://drive.google.com/uc?export=view&id=1tVGI7gnU008d6UNAOXtylz_i52qUSCHz", desc:"Personaje limpiando un baño con trapeador y productos. Representa el trabajo invisible, el esfuerzo cotidiano y las tareas sin reconocimiento."},
+  {id:6, f:"https://drive.google.com/uc?export=view&id=1FR0Eh6yL9fz06rtB-UqB8DhdsJgtbfK8", r:"https://drive.google.com/uc?export=view&id=1PoR_Ai5V1b3YeV3e2GJZJUk8IK3kpCRE", desc:"Piloto de Fórmula 1 en un circuito. Representa velocidad, competencia, precisión y adrenalina."},
+  {id:7, f:"https://drive.google.com/uc?export=view&id=1hrzAutJO-Nd-jqqU2H_T4cjO0-botPi5", r:"https://drive.google.com/uc?export=view&id=1OXRSVoxcs0RhZuokDXkBqR8cP6W7_3K", desc:"Surfista en una ola enorme en playa soleada. Representa libertad, fluir con las circunstancias y dominar la incertidumbre."},
+  {id:8, f:"https://drive.google.com/uc?export=view&id=12QFVyfifi2RQJ0Oj8eRL7nlAGKVkkUA4", r:"https://drive.google.com/uc?export=view&id=17jfT_8ol5XbR97olO52HcQntKJz-1Ysr", desc:"Carrusel en parque de diversiones lleno de personas. Representa ciclos repetitivos, alegría colectiva y nostalgia."},
+  {id:9, f:"https://drive.google.com/uc?export=view&id=1hWVrDFw0E1Vkngls4_H4gfwoCH1h8UUo", r:"https://drive.google.com/uc?export=view&id=11CEHwaexmk814eKs3vZQZpWRkaPMGpEE", desc:"Médico realizando cirugía en quirófano moderno. Representa precisión, responsabilidad vital y conocimiento especializado."},
+  {id:10, f:"https://drive.google.com/uc?export=view&id=1jJ1gRWFfVug86Kg1hs7DEQCVv0Ci1b6Q", r:"https://drive.google.com/uc?export=view&id=1oaAIhT2fFs03UMbYrPXO6nS8gG4wlAP_", desc:"Personaje pensativo en avenida urbana rodeado de árboles. Representa introspección, soledad entre multitudes y reflexión."},
+  {id:11, f:"https://drive.google.com/uc?export=view&id=1I0l1c97WqnxnjEr1Bu__y2w075qSH0-H", r:"https://drive.google.com/uc?export=view&id=1ng_XOkjUwNjAhJNhnFtXhXznVB296O1e", desc:"Adulto y niño caminando juntos en parque con tonos cálidos. Representa vínculos intergeneracionales, guía y acompañamiento."},
+  {id:12, f:"https://drive.google.com/uc?export=view&id=1yp3tjFC-fdtXksoTinWKA7D00SvdGbhz", r:"https://drive.google.com/uc?export=view&id=1c_XgmizRttG5JtxHKCIHecJx3M2u2B7C", desc:"Corredor en maratón con Estatua de la Libertad al fondo. Representa perseverancia, metas grandes y superación personal."},
+  {id:13, f:"https://drive.google.com/uc?export=view&id=15s1-dUyNt19Vb90oSQLhK7JhGLGM7o1f", r:"https://drive.google.com/uc?export=view&id=1ebs8JIzLjPEe8zUetAtlVhNIa9uXwAaJ", desc:"Persona disfrutando pasta en entorno hogareño con copa de vino. Representa placer simple, disfrute cotidiano y celebración."},
+  {id:14, f:"https://drive.google.com/uc?export=view&id=1QZtaPnO545PW5J7UrKOUPjQ3hGqqp7s3", r:"https://drive.google.com/uc?export=view&id=1_rr5koDcjcknRgM1jX4CXm98pUrGmP1I", desc:"Abuelo leyendo en biblioteca acogedora con iluminación cálida. Representa sabiduría acumulada, paciencia y conocimiento."},
+  {id:15, f:"https://drive.google.com/uc?export=view&id=1s83AEqpWfo-XIvrEcuGMlxfiFO-Nv833", r:"https://drive.google.com/uc?export=view&id=1ldWNHwuXZNV0Ov8ypomiJFIwBtQ7-TQS", desc:"Mujer Maravilla con lazo dorado en ambiente de acción. Representa fuerza femenina, justicia y poder interior."},
+  {id:16, f:"https://drive.google.com/uc?export=view&id=1wgPbKTpa6oVTXlZvW_mDU5yXy8avb1ui", r:"https://drive.google.com/uc?export=view&id=1Wwz_ZCKCPVmzEMMFpKcUxvI3GWsjUaPt", desc:"Estación de tren animada con personas en andenes. Representa transiciones, partidas, llegadas y momentos de cambio."},
+  {id:17, f:"https://drive.google.com/uc?export=view&id=1m9Y1DCfWvQ0gMWL8Ue57AP3Fbkc38KTY", r:"https://drive.google.com/uc?export=view&id=1E8J-TZBpmWI7PY4ncHwLoprbbiYcIbs1", desc:"Profesora en salón de clases con pizarra. Representa enseñanza, transmisión de conocimiento y formación."},
+  {id:18, f:"https://drive.google.com/uc?export=view&id=1emLElIDrLUEL_tIdT1WgcMlQXqdsZMo5", r:"https://drive.google.com/uc?export=view&id=1dVZTmFBcP1UsZdoHjmFYjEORTVYfd845", desc:"Chef cocinando en cocina bien equipada con ingredientes frescos. Representa creatividad, pasión y transformación de elementos simples."},
+  {id:19, f:"https://drive.google.com/uc?export=view&id=13KGWC1Ahppz5Di7xJwIzuH-hSkdnDdR2", r:"https://drive.google.com/uc?export=view&id=1gP8848WQ_DYchwRLPqa60-RwSxxeGLAy", desc:"Palomas hechas de LEGO en plaza urbana. Representa comunidad, mensajes y conexiones cotidianas invisibles."},
+  {id:20, f:"https://drive.google.com/uc?export=view&id=1rdsZ9rVaXjNgVlCHkPM5vXshNAwz2QUI", r:"https://drive.google.com/uc?export=view&id=1ZK8cfgq2iYpLqja-I03AOpnBJR5aybUB", desc:"Abeja en flor brillante en campo bajo sol radiante. Representa trabajo colectivo, propósito y polinización de ideas."},
+  {id:21, f:"https://drive.google.com/uc?export=view&id=1rtjSrla7dNCRIkMIxsk5c2EcVBnt_5SK", r:"https://drive.google.com/uc?export=view&id=1RpwgmeeyjWC2PvHi0m6cc4tkS4Bqu1KS", desc:"Turista junto a Torre Eiffel con cámara y bebida. Representa exploración cultural, nuevas perspectivas y apertura al mundo."},
+  {id:22, f:"https://drive.google.com/uc?export=view&id=1HwZjv6rdOugrmYtqZ_2sinWrhVUojrbu", r:"https://drive.google.com/uc?export=view&id=1BvErIhi7Muf5V5XC10bOU-vRYr_YTYiQ", desc:"Persecución entre policía y ladrón en ciudad. Representa conflicto, reglas vs libertad y tensión entre sistemas."},
+  {id:23, f:"https://drive.google.com/uc?export=view&id=1KG7J1zKXjgHlBpY4_qUFWfqCUOSw4KpM", r:"https://drive.google.com/uc?export=view&id=1u3jVmaxdRdqRFYcB5lZPInsQ_pKXKLuY", desc:"Payaso triste en entorno cálido con iluminación tenue. Representa la máscara social, la tristeza oculta y la contradicción entre apariencia y realidad."},
+  {id:24, f:"https://drive.google.com/uc?export=view&id=1RiNEpzTFWo4N88tQcUZj_OLUBKjvwj2c", r:"https://drive.google.com/uc?export=view&id=1JQBck0lqKdxfAw4GvLO4Ef7wTKHAgdVv", desc:"Koala adulto abrazando a su cría en árbol. Representa protección, ternura, vínculo y cuidado incondicional."},
+  {id:25, f:"https://drive.google.com/uc?export=view&id=1B7Bn_5u-8B-h2N-inqCLvHDcQHXGamIv", r:"https://drive.google.com/uc?export=view&id=1ZjqrwMjOA_K5jrkMU6TMSoiQKrz4IGZT", desc:"Banquero en banco rodeado de dinero y monedas. Representa poder económico, seguridad financiera y control de recursos."},
+  {id:26, f:"https://drive.google.com/uc?export=view&id=1iOu_3aovw0w1ggv4dVFlxoVrUbQwfZ3d", r:"https://drive.google.com/uc?export=view&id=1VYy4TJb7xrDGZsLBE3sNcGvMILVF7Ep-", desc:"Boda LEGO con pareja bajo arco de flores. Representa compromiso, celebración y nuevos comienzos."},
+  {id:27, f:"https://drive.google.com/uc?export=view&id=1vAPZuP5lTrTDT07tRtu9fxOZfeyNVcMv", r:"https://drive.google.com/uc?export=view&id=18wI-H313WEAzOIhAUPCvI9OxHZfvBy7f", desc:"Entorno steampunk con relojes, engranajes y reloj de arena. Representa el tiempo como recurso, mecanismos complejos y la presión del reloj."},
+  {id:28, f:"https://drive.google.com/uc?export=view&id=1pWRkHJ_r_AEVMUVQKMpdQCFMkIhxynX-", r:"https://drive.google.com/uc?export=view&id=1tedBO6gnsJWTFL3yHzzoX9UEiRHUXW4Y", desc:"Persona en paracaídas descendiendo con cielo despejado. Representa salto al vacío, confianza y rendirse al proceso."},
+  {id:29, f:"https://drive.google.com/uc?export=view&id=1st8N90-DIaH5XmywFa_fZN4P7BDp5dhX", r:"https://drive.google.com/uc?export=view&id=1MWbrypg4vUtpc8X3ywKwSeoYMP-c7X2x", desc:"Thomas Edison en laboratorio rodeado de bombillas y equipo científico. Representa inventiva, perseverancia ante el fracaso y genialidad."},
+  {id:30, f:"https://drive.google.com/uc?export=view&id=1-DYtukFLYi8HzBObnn3U5Qk96lXp_uvZ", r:"https://drive.google.com/uc?export=view&id=1hZzqQ2vipLpFOU8myaxPWb0GLupFGiv-", desc:"Fotógrafo explorador con cámara, mochila y sombrero. Representa documentar la realidad, capturar momentos y exploración."},
+  {id:31, f:"https://drive.google.com/uc?export=view&id=17ZzN3JY0241-mJIJlWn10j5smnL58Pa_", r:"https://drive.google.com/uc?export=view&id=1lmI_CisjGdcUi5WFoQ8Yna9lTpeahnkX", desc:"Catrina del Día de Muertos rodeada de cempasúchil. Representa la dualidad vida-muerte, celebración de la memoria y transformación."},
+  {id:32, f:"https://drive.google.com/uc?export=view&id=1mjTLV20HwTGaepSNF9rxOqtX0l3XtIQl", r:"https://drive.google.com/uc?export=view&id=1tFfcpnIq0_eJsCz5_LGLeGgL5Zqr1xaH", desc:"Pueblo europeo con casas tradicionales y bicicletas. Representa comunidad, ritmo lento y tradición bien conservada."},
+  {id:33, f:"https://drive.google.com/uc?export=view&id=1nwbxl11B2ddYReMElij4MeudwD3aHTIH", r:"https://drive.google.com/uc?export=view&id=1BMzqlANbmN4kXXI0KgH4ApJ8ehBh-yT6", desc:"Buzo explorando arrecife con corales y delfines. Representa profundidad, mundos ocultos y exploración de lo desconocido."},
+  {id:34, f:"https://drive.google.com/uc?export=view&id=1Ygfi-SOJwcrA2X_Rob6k31k8E1o-TEqN", r:"https://drive.google.com/uc?export=view&id=16qTvI0yhUL26mLLN0eEkMvB6t9NAmkMb", desc:"Chef con variedad de especias coloridas y ordenadas. Representa mezcla creativa, precisión y el arte de combinar elementos."},
+  {id:35, f:"https://drive.google.com/uc?export=view&id=1x3uqdnM0IiDOJ1gLPNPhwYfSbg3Zy-zE", r:"https://drive.google.com/uc?export=view&id=1wdieB_fAfXMG1h6663dC0enasQEDvkj2", desc:"Pirata con loro y barco de calavera en entorno tropical. Representa rebeldía, búsqueda de tesoros y vivir al margen de las reglas."},
+  {id:36, f:"https://drive.google.com/uc?export=view&id=16g2YlGEidNuUqxQNbBsPZ8r0OWRYJ7xY", r:"https://drive.google.com/uc?export=view&id=1ynL9pGX2zKX53_yA8EL_hWUBbXIMheRW", desc:"Pelé en estadio lleno con banderas de Brasil. Representa excelencia, pasión colectiva e ícono que trasciende su campo."},
+  {id:37, f:"https://drive.google.com/uc?export=view&id=15WcKn4hptBJjbSPkJSWnHI7jBey_VKI5", r:"https://drive.google.com/uc?export=view&id=1AyOoUX6PejO5EjLgaGpfnKsANNsM69gw", desc:"Stephen Hawking con galaxias y ecuaciones al fondo. Representa inteligencia que supera limitaciones físicas y visión universal."},
+  {id:38, f:"https://drive.google.com/uc?export=view&id=1E_QxozsZ_wMy4Wg4Df4QPvSToG6HtlYD", r:"https://drive.google.com/uc?export=view&id=1yE9aUrgkc5UWmYjptRtLk3vIosRZADNe", desc:"Juana de Arco con armadura, espada y bandera. Representa convicción, liderazgo en adversidad y valentía."},
+  {id:39, f:"https://drive.google.com/uc?export=view&id=1mhu2aQmL3vN99Vzht_t8xK6q_1GML6II", r:"https://drive.google.com/uc?export=view&id=163C_139IpJU7u_x25oVHeW8O0dTq35n9", desc:"Nikola Tesla en laboratorio futurista con bobinas eléctricas. Representa genialidad incomprendida, visión del futuro y energía transformadora."},
+  {id:40, f:"https://drive.google.com/uc?export=view&id=1MxbV2Oa01lVDdbmA9uC6vGCCm1giVx4n", r:"https://drive.google.com/uc?export=view&id=1RuGpzfVs81vsarJ44NvBkJyh9FKBBinJ", desc:"Gandhi con bastón y rueca, resistencia pacífica. Representa cambio sin violencia, simplicidad poderosa y propósito colectivo."},
+  {id:41, f:"https://drive.google.com/uc?export=view&id=1TwAHH2st1AW40RamEOsvXDivtVxhPZfC", r:"https://drive.google.com/uc?export=view&id=1PlDFZlLrXJKGwWdyS84JZdVFd5HSiQfR", desc:"Einstein con fórmulas en pizarrón sosteniendo puntero. Representa curiosidad intelectual, relatividad y pensamiento que cambia paradigmas."},
+  {id:42, f:"https://drive.google.com/uc?export=view&id=1aBW-oVx5qkptiVsY6zcgQ8oyrr362ZOZ", r:"https://drive.google.com/uc?export=view&id=1vE7Enx7TZWbSw00hkAvOl2nRd2N-O6Nf", desc:"Steve Jobs con suéter negro y fondo de tecnología. Representa innovación disruptiva, diseño como filosofía y visión obstinada."},
+  {id:43, f:"https://drive.google.com/uc?export=view&id=1WcV20xKLCvzUcDkvWfqGqRIBXdCNfspO", r:"https://drive.google.com/uc?export=view&id=1xxFUw84uVlvjkQAiMVhHxWT9Eu5EDs4r", desc:"Marilyn Monroe con vestido blanco en calle vibrante. Representa ícono cultural, atracción magnética y vulnerabilidad detrás del glamour."},
+  {id:44, f:"https://drive.google.com/uc?export=view&id=1KU5w9PdbnoMw5DSPoPnWFJpLfSKyKRaC", r:"https://drive.google.com/uc?export=view&id=1yV6t0t4zAfkyxZQHl8M_ckJ7hhcJI4Gy", desc:"Charles Chaplin con bastón y sombrero de bombín. Representa humor como resistencia, humanidad universal y crítica social desde la comedia."},
+  {id:45, f:"https://drive.google.com/uc?export=view&id=1XalxyiLf7D4ii52md3O0Q6KMXCzep76-", r:"https://drive.google.com/uc?export=view&id=1_GHZ0l0Tz633Z_cZ2tsgwY51dyho41LV", desc:"Tienda de motocicletas de alta gama con modelos expuestos. Representa deseo de libertad, status y pasión por la velocidad."},
+  {id:46, f:"https://drive.google.com/uc?export=view&id=1NlbLzCVJ3ALkpdfmA4BpbEARKHLrKczP", r:"https://drive.google.com/uc?export=view&id=1u6f9VA0KUKvVc_sK9QEDlVHaou8EYGA4", desc:"Intersección urbana con multitud cruzando la calle. Representa flujo colectivo, anonimato en masa y decisiones en movimiento."},
+  {id:47, f:"https://drive.google.com/uc?export=view&id=1JqS3S0WXzsq1O40P-xg2FiiikdJ-U5Eg", r:"https://drive.google.com/uc?export=view&id=1zL0N_wH-9ps6Dr-UaP2VReBW0kH9Eulv", desc:"Joven pianista en teatro iluminado frente a piano de cola. Representa talento en solitario, vulnerabilidad ante el público y arte como vocación."},
+  {id:48, f:"https://drive.google.com/uc?export=view&id=1uozLSma0HaQH4c_tlUZYqdqNKWr_rijX", r:"https://drive.google.com/uc?export=view&id=1TVoc-eZQDDUG8wU0Tdm4tGyo6Oig09qS", desc:"Soldado arrodillado frente a perro militar en desierto. Representa lealtad incondicional, compañerismo en adversidad y vínculo sin palabras."},
+  {id:49, f:"https://drive.google.com/uc?export=view&id=11D84g630Nh_Sh622x1Q2VaiTYld9sW8B", r:"https://drive.google.com/uc?export=view&id=1k4ZayFjW5BPteTR0Eg1jca8eOdwk9ihu", desc:"Fotógrafo sosteniendo cámara profesional con lente destacado. Representa el ojo que captura la verdad, perspectiva única y documentar el mundo."},
+  {id:50, f:"https://drive.google.com/uc?export=view&id=1YTKGG7BI2nH9HDaWQ-jpyCL4UH6wjcwN", r:"https://drive.google.com/uc?export=view&id=1vVPkx4h3bcXYnfJUgUPOd2H6-_pvlvtd", desc:"Carpintero con casco y martillo en taller. Representa trabajo manual con orgullo, construcción paciente y habilidad artesanal."},
+  {id:51, f:"https://drive.google.com/uc?export=view&id=1KQvmaEQKFP6aI0lsJpKlUmPS_exdp7i6", r:"https://drive.google.com/uc?export=view&id=1dm5YR5nsAOzL66L0W8rzhlsvVdHx01Hl", desc:"Bombero equipado con mangueras y camiones al fondo. Representa respuesta en crisis, valentía ante el peligro y protección de otros."},
+  {id:52, f:"https://drive.google.com/uc?export=view&id=1j5Y4UiO0hNSsHz2UR4s9JLZpkYNmoXWC", r:"https://drive.google.com/uc?export=view&id=1xK-_e0nKs7Ijp4biE_gZWv2mPE7jwHBh", desc:"Piloto dentro de cabina de avión con instrumentos. Representa control bajo presión, autoridad técnica y visión desde las alturas."},
+  {id:53, f:"https://drive.google.com/uc?export=view&id=1YaOVftO7BtDxcdP5M6zvR5z25ZPjdZOI", r:"https://drive.google.com/uc?export=view&id=147vyxzohviEOEgvcLJczRei8yN4ZlKof", desc:"Hombre en traje de época observándose en espejo con expresión diferente. Representa dualidad interna, identidad oculta y contraste entre imagen pública y privada."},
+  {id:54, f:"https://drive.google.com/uc?export=view&id=1nUOxmUAk2ngplsoqv1wIzVauTDg49urO", r:"https://drive.google.com/uc?export=view&id=1zZ808TosEPLctGSG6s554ipqkBVkmMmB", desc:"Dos autos chocando en intersección urbana con ladrillos LEGO dispersos. Representa colisión de fuerzas, consecuencias inevitables y puntos de quiebre."},
+  {id:55, f:"https://drive.google.com/uc?export=view&id=1_s8MHk3vjAX61xodWq0lAoDrHVEr_-QT", r:"https://drive.google.com/uc?export=view&id=1agSJqe2T5DwdAd56yyxFr7xNa6l9D_5B", desc:"Alpinista celebrando en cima de montaña nevada. Representa logro después del esfuerzo extremo, superación de límites y perspectiva desde la cima."},
+  {id:56, f:"https://drive.google.com/uc?export=view&id=1T4TYrkZTpsORA0xWiSHFZckY1mCO-uiW", r:"https://drive.google.com/uc?export=view&id=1IXXvSfkvu-K0xbZA7XcG0WyBNAzc_20A", desc:"Cineasta grabando en set animado con público. Representa narrar historias, crear realidades y el poder de la imagen."},
+  {id:57, f:"https://drive.google.com/uc?export=view&id=1coHSO7GR6ue8LPqqZmVryoqha5hlpXLU", r:"https://drive.google.com/uc?export=view&id=13BQQbRrxd4duxlxoGur8pJ16H3k1hjAf", desc:"Celda de prisión con prisionero en uniforme a rayas. Representa encierro, limitaciones impuestas y libertad coartada."},
+  {id:58, f:"https://drive.google.com/uc?export=view&id=1ZEtgEY31pCNYT8FRWhHyYFtY_b3YoP7w", r:"https://drive.google.com/uc?export=view&id=16KireALYC6g5Ujh4RxvctetwG2brIesb", desc:"El hombre invisible en entorno urbano sin rostro visible. Representa invisibilidad social, pasar desapercibido y existir sin ser visto."},
+  {id:59, f:"https://drive.google.com/uc?export=view&id=1m3CCXssLrN43ZbS6Vms15DLcVtnJAx--", r:"https://drive.google.com/uc?export=view&id=1P7FY-kkOuqBRMSS-IvyZaMGkktBKKhzf", desc:"Joven explorador con león en entorno selvático. Representa valentía ante lo imponente, dominio del miedo y alianzas inesperadas."},
+  {id:60, f:"https://drive.google.com/uc?export=view&id=1vdt9aVUWtG16h-vJdAj8KLs07RATHjRP", r:"https://drive.google.com/uc?export=view&id=1J046N2cf8YKvzsXwzJYh6BAoL12b3AEo", desc:"Cofre del tesoro lleno de monedas en playa tropical con barco pirata. Representa recompensa oculta, búsqueda de valor y riqueza por descubrir."},
+  {id:61, f:"https://drive.google.com/uc?export=view&id=1c9L9inMLSFmtAiM9YSKYDxmpV0s0_uRJ", r:"https://drive.google.com/uc?export=view&id=1Vp1_UlHXBDPV3QO5J5YRE1SlKSc71VDv", desc:"Astronautas con rover en luna con la Tierra visible. Representa exploración de lo imposible, trabajo en equipo extremo y nuevos territorios."},
+  {id:62, f:"https://drive.google.com/uc?export=view&id=1r0i0B5ZtWku6GIFYxwRSS9aK7jNed1ti", r:"https://drive.google.com/uc?export=view&id=1HJTvVf2zCY7Lh3TZzQwnEGjWv6em7b2L", desc:"Jardinero plantando árbol con herramientas y macetas. Representa crecimiento paciente, cuidado del futuro y siembra de lo que vendrá."},
+  {id:63, f:"https://drive.google.com/uc?export=view&id=1em-Q1a35VWeSmcXHVuVa0itiK9WnWVLR", r:"https://drive.google.com/uc?export=view&id=17fNlwSqAFcNtWvJZyfD7JzYtQeWKKkT8", desc:"Monja frente a iglesia en ambiente espiritual con jardines. Representa devoción, servicio y encontrar paz en la fe."},
+  {id:64, f:"https://drive.google.com/uc?export=view&id=1ucUhsD8krgUspZnpmzks4Lw0QOJYMSg6", r:"https://drive.google.com/uc?export=view&id=1bUhvW42QVJe7F2MWRDeig_Fc0H3tNCRT", desc:"Hombre Araña en edificio con rascacielos nocturnos. Representa doble identidad, responsabilidad con gran poder y proteger en silencio."},
+  {id:65, f:"https://drive.google.com/uc?export=view&id=15kMAvfb6Q1apDjvhnI0XCO7fHuYWxFE3", r:"https://drive.google.com/uc?export=view&id=1G-XQ2awJSvSFt1cJnf1ImrvRh6R1qza3", desc:"Minifigura pintando en caballete en estudio de arte. Representa expresión creativa, proceso artístico y transformar el mundo con color."},
+  {id:66, f:"https://drive.google.com/uc?export=view&id=1Mmt-7MRAw7eKV5AtUPCvI9OxHZfvBy7f", r:"https://drive.google.com/uc?export=view&id=1MlZOplHt3ZOcvBlF82Z0Vs3drGWM-hg5", desc:"Globo aerostático vibrante sobre campos al amanecer. Representa elevación, perspectiva desde arriba y libertad de volar."},
+  {id:67, f:"https://drive.google.com/uc?export=view&id=1jzBJyF2LTQmB4bHroOaC2X5C500NahAG", r:"https://drive.google.com/uc?export=view&id=1q7DxKVfc6vWnsworWOpDqpSUh0y-KIw1", desc:"Freddie Mercury en escenario LEGO con micrófono y público. Representa performance, carisma desbordante y entrega total al arte."},
+];
+
+function randomCard(exclude=[]) {
+  const pool = SSP_CARDS.filter(c => !exclude.includes(c.id));
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ── JUEGO STATE ──
+let juegoState = {
+  turno: 1,  // 1=personaje, 2=ia1, 3=obstaculo, 4=ia2, 5=deseo
+  cards: {},  // {1: cardId, 2: cardId, 3: cardId, 4: cardId, 5: cardId}
+  metaphors: {}, // {1: texto, 3: texto, 5: texto}
+  iaFragments: {}, // {2: texto, 4: texto}
+  storyComplete: false
+};
+
+function renderJuegoStage(saved) {
+  // Restore state if saved
+  if (saved.juegoState) juegoState = saved.juegoState;
+
+  const turnoLabels = [
+    {num:1, tipo:'emprendedor', emoji:'🧙', title:'El Personaje', sub:'Elige una carta que represente a tu cliente'},
+    {num:2, tipo:'ia', emoji:'🤖', title:'La IA continúa...', sub:'La IA elige una carta y expande la historia'},
+    {num:3, tipo:'emprendedor', emoji:'🐉', title:'El Obstáculo', sub:'Elige la carta que representa lo que lo frena'},
+    {num:4, tipo:'ia', emoji:'🤖', title:'La IA continúa...', sub:'La IA elige una carta y profundiza la historia'},
+    {num:5, tipo:'emprendedor', emoji:'⭐', title:'El Deseo Secreto', sub:'Elige la carta que representa su sueño oculto'},
+  ];
+
+  const steps = turnoLabels.map(t => {
+    const isDone = juegoState.turno > t.num;
+    const isActive = juegoState.turno === t.num;
+    const isIA = t.tipo === 'ia';
+    return `<div class="juego-step ${isDone?'done':isActive?'active':isIA?'ia':''}"></div>`;
+  }).join('');
+
+  let turnosHTML = turnoLabels.map(t => {
+    const isDone = juegoState.turno > t.num;
+    const isActive = juegoState.turno === t.num;
+    const isIA = t.tipo === 'ia';
+
+    let inner = `<div class="turno-header">
+      <span class="turno-badge ${isIA?'ia':'emprendedor'}">${isIA?'IA':'Tú'}</span>
+      <div><div class="turno-title">${t.emoji} ${t.title}</div><div class="turno-subtitle">${t.sub}</div></div>
+    </div>`;
+
+    if (isIA) {
+      if (isDone && juegoState.cards[t.num]) {
+        const card = SSP_CARDS.find(c => c.id === juegoState.cards[t.num]);
+        inner += `<div class="ia-card-reveal">
+          <div class="ia-card-img"><img src="${card?.f||''}" alt="Carta IA"></div>
+          <div class="ia-card-text">Carta #${card?.id} elegida por la IA</div>
+        </div>
+        <div class="ia-story-fragment">${juegoState.iaFragments[t.num]||''}</div>`;
+      } else if (isActive) {
+        inner += `<button class="btn-juego btn-juego-ia" onclick="iaJugarTurno(${t.num})" id="btn-ia-turno-${t.num}">
+          🤖 La IA juega su turno
+        </button>`;
+      }
+    } else {
+      if (isDone && juegoState.cards[t.num]) {
+        const card = SSP_CARDS.find(c => c.id === juegoState.cards[t.num]);
+        inner += `<div class="selected-card-row">
+          <div class="selected-card-mini"><img src="${card?.f||''}" alt="Carta ${card?.id}"></div>
+          <span style="font-size:.82rem;color:var(--jade)">Carta #${card?.id} — ${juegoState.metaphors[t.num]||''}</span>
+        </div>`;
+      } else if (isActive) {
+        inner += `<div class="juego-cards-grid" id="juego-grid-${t.num}">
+          ${SSP_CARDS.map(c => `<div class="juego-card ${juegoState.cards[t.num]===c.id?'selected':''}" onclick="juegoSelectCard(${t.num},${c.id})">
+            <img src="${c.f}" alt="Carta ${c.id}" loading="lazy">
+          </div>`).join('')}
+        </div>
+        ${juegoState.cards[t.num] ? `
+        <div class="field-group">
+          <label class="field-label">¿Qué ves en esta carta? ¿Qué te evoca?</label>
+          <textarea class="juego-metaphor field-input" id="metaphor-${t.num}" rows="2" placeholder="Describe lo que ves y por qué elegiste esta carta...">${juegoState.metaphors[t.num]||''}</textarea>
+        </div>
+        <button class="btn-juego btn-juego-primary" onclick="juegoConfirmarTurno(${t.num})">Confirmar y continuar →</button>
+        ` : ''}`;
+      }
+    }
+
+    return `<div class="juego-turno ${isActive?'active':''} ${isDone?'done':''} ${isIA?'ia-turno':''}">${inner}</div>`;
+  }).join('');
+
+  return `<div class="juego-container">
+    <div class="juego-progress">${steps}</div>
+    ${turnosHTML}
+    ${juegoState.storyComplete ? `<button class="btn-ai" id="btn-ai-historia" onclick="runAI('historia')">✦ Generar Mapa Emocional Completo</button>
+    <button class="btn-regenerate ${saved.aiResult?'visible':''}" id="btn-regen-historia" onclick="regenAI('historia')">↺ Regenerar</button>` : ''}
+  </div>`;
+}
+
+window.juegoSelectCard = (turno, cardId) => {
+  juegoState.cards[turno] = cardId;
+  // Re-render just the grid
+  const grid = document.getElementById(`juego-grid-${turno}`);
+  if (grid) {
+    grid.querySelectorAll('.juego-card').forEach((el, i) => {
+      el.classList.toggle('selected', SSP_CARDS[i]?.id === cardId);
+    });
+  }
+  // Show metaphor input if not visible
+  renderStage(currentStage);
+};
+
+window.juegoConfirmarTurno = (turno) => {
+  const metaphorEl = document.getElementById(`metaphor-${turno}`);
+  if (!metaphorEl || !metaphorEl.value.trim()) { showToast('Escribe qué ves en la carta'); return; }
+  if (!juegoState.cards[turno]) { showToast('Elige una carta primero'); return; }
+  juegoState.metaphors[turno] = metaphorEl.value.trim();
+  juegoState.turno = turno + 1;
+  if (!journeyData['historia']) journeyData['historia'] = {};
+  journeyData['historia'].juegoState = juegoState;
+  saveLocal();
+  renderStage(currentStage);
+};
+
+window.iaJugarTurno = async (turno) => {
+  const btn = document.getElementById(`btn-ia-turno-${turno}`);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> La IA está jugando...'; }
+
+  const e1 = journeyData['producto'] || {};
+  const e3 = journeyData['segmento_revelado'] || {};
+  const card1 = SSP_CARDS.find(c => c.id === juegoState.cards[1]);
+  const card3 = turno === 4 ? SSP_CARDS.find(c => c.id === juegoState.cards[3]) : null;
+
+  // Pick random card for IA (exclude already used)
+  const usedIds = Object.values(juegoState.cards).filter(Boolean);
+  const iaCard = randomCard(usedIds);
+  juegoState.cards[turno] = iaCard.id;
+
+  const contextSoFar = Object.keys(juegoState.metaphors).map(t =>
+    `Carta ${t} (${t=='1'?'Personaje':t=='3'?'Obstáculo':'Deseo'}): ${juegoState.metaphors[t]}`
+  ).join('
+');
+
+  const fragmentAnterior = juegoState.iaFragments[2] ? `Fragmento anterior de la historia: ${juegoState.iaFragments[2]}` : '';
+
+  const systemPrompt = `Eres un narrador de historias fantásticas colaborando con un emprendedor en la metodología SSP.
+
+Contexto del negocio:
+- Producto: ${e1.nombre||''} — ${e1.descripcion||''}
+- Segmento revelado: ${e3.selectedSegmentText||''}
+
+El emprendedor ha elegido cartas SSP y descrito lo que ve. Tú debes:
+1. Tomar la carta aleatoria que te tocó (#${iaCard.id}) e interpretarla emocionalmente (no literalmente)
+2. Escribir UN fragmento corto de historia (máximo 80 palabras) que continúe la narrativa
+3. El fragmento debe conectar la carta del emprendedor con la tuya de forma poética
+
+Contexto de la historia hasta ahora:
+${contextSoFar}
+${fragmentAnterior}
+
+Responde SOLO con este JSON:
+{"fragmento":"el fragmento de historia continuado, máximo 80 palabras, fantasioso y metafórico"}`;
+
+  try {
+    const resp = await fetch('https://anthropicproxy-z4dcljw5oa-uc.a.run.app', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5',
+        max_tokens: 300,
+        system: systemPrompt,
+        messages: [{role: 'user', content: [
+          {type: 'image', source: {type: 'url', url: iaCard.f}},
+          {type: 'text', text: `La carta aleatoria que me tocó es la #${iaCard.id}: ${iaCard.desc}. Continúa la historia usando esta imagen como inspiración visual.`}
+        ]}]
+      })
+    });
+    const data = await resp.json();
+    const raw = data.content?.[0]?.text || '{}';
+    const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    juegoState.iaFragments[turno] = parsed.fragmento || '';
+  } catch(e) {
+    juegoState.iaFragments[turno] = 'La historia continúa en las sombras...';
+    console.error(e);
+  }
+
+  juegoState.turno = turno + 1;
+  if (juegoState.turno > 5) juegoState.storyComplete = true;
+  if (!journeyData['historia']) journeyData['historia'] = {};
+  journeyData['historia'].juegoState = juegoState;
+  saveLocal();
+  renderStage(currentStage);
+};
+
+// Override runAI for historia to use juego state
+const _originalRunAI = window.runAI;
+window.runAI = async (stageId) => {
+  if (stageId !== 'historia') { return _originalRunAI(stageId); }
+
+  if (!juegoState.storyComplete) { showToast('Completa los 5 turnos primero'); return; }
+
+  const btn = document.getElementById('btn-ai-historia');
+  const regen = document.getElementById('btn-regen-historia');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Generando mapa emocional...'; }
+
+  const e1 = journeyData['producto'] || {};
+  const e3 = journeyData['segmento_revelado'] || {};
+
+  const storyContext = [
+    `Turno 1 — Personaje (carta #${juegoState.cards[1]}): "${juegoState.metaphors[1]}"`,
+    `Turno 2 — IA (carta #${juegoState.cards[2]}): "${juegoState.iaFragments[2]}"`,
+    `Turno 3 — Obstáculo (carta #${juegoState.cards[3]}): "${juegoState.metaphors[3]}"`,
+    `Turno 4 — IA (carta #${juegoState.cards[4]}): "${juegoState.iaFragments[4]}"`,
+    `Turno 5 — Deseo Secreto (carta #${juegoState.cards[5]}): "${juegoState.metaphors[5]}"`,
+  ].join('
+');
+
+  const systemPrompt = `Eres un estratega emocional especialista en SSP (Smart Serious Play).
+
+Una historia colaborativa entre un emprendedor y la IA ha sido co-creada usando cartas SSP. A partir de esa historia debes extraer el mapa emocional del cliente del emprendedor.
+
+Contexto del negocio:
+- Producto: ${e1.nombre||''} — ${e1.descripcion||''}
+- Segmento revelado: ${e3.selectedSegmentText||''}
+
+Historia co-creada:
+${storyContext}
+
+Extrae exactamente:
+- 3 DOLORES (lo que carga, lo que pesa)
+- 3 FRUSTRACIONES (lo que intenta y falla)
+- 3 MIEDOS (lo que paraliza en silencio)
+
+Para cada uno: insight (verdad no dicha) y accionador (acción/recurso/alianza concreta).
+
+Responde SOLO con este JSON:
+{"historia":"resumen poético de la historia co-creada en 100 palabras","elementos":[{"tipo":"💔 DOLOR","nombre":"nombre corto","descripcion":"descripción empática","insight":"verdad no dicha","accionador":"acción concreta"},{"tipo":"💔 DOLOR","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"💔 DOLOR","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😤 FRUSTRACIÓN","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😤 FRUSTRACIÓN","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😤 FRUSTRACIÓN","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😨 MIEDO","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😨 MIEDO","nombre":"","descripcion":"","insight":"","accionador":""},{"tipo":"😨 MIEDO","nombre":"","descripcion":"","insight":"","accionador":""}]}`;
+
+  try {
+    const resp = await fetch('https://anthropicproxy-z4dcljw5oa-uc.a.run.app', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5',
+        max_tokens: 2000,
+        system: systemPrompt,
+        messages: [{role: 'user', content: 'Genera el mapa emocional completo de la historia.'}]
+      })
+    });
+    const data = await resp.json();
+    const raw = data.content?.[0]?.text || '{}';
+    const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
+
+    if (!journeyData['historia']) journeyData['historia'] = {};
+    journeyData['historia'].aiResult = `📖 HISTORIA CO-CREADA\n\n${parsed.historia}`;
+    journeyData['historia'].accionadores = parsed.elementos.map(e => ({
+      tipo: e.tipo, nombre: e.nombre, insight: e.insight, accionador: e.accionador
+    }));
+    saveLocal();
+    if (regen) regen.classList.add('visible');
+    renderStage(currentStage);
+  } catch(e) {
+    showToast('Error al generar mapa emocional');
+    console.error(e);
+  }
+
+  if (btn) { btn.disabled = false; btn.innerHTML = '✦ Generar Mapa Emocional Completo'; }
+};
+
 </script>
 </body>
 </html>
