@@ -631,15 +631,16 @@ let currentUserEmail = null;
 
 // ── INIT ──
 window.addEventListener('load', () => {
-  // Check if user has valid session in localStorage
   const savedEmail = localStorage.getItem('ssp_email');
   const savedExpiry = localStorage.getItem('ssp_expiry');
   
   if (savedEmail && savedExpiry && Date.now() < parseInt(savedExpiry)) {
     currentUserEmail = savedEmail;
-    startApp();
+    loadFromFirebase().then(() => startApp());
   } else {
-    document.getElementById('auth-screen').style.display = 'flex';
+    // Show auth screen
+    const auth = document.getElementById('auth-screen');
+    if (auth) auth.style.display = 'flex';
   }
 });
 
