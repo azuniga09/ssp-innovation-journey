@@ -536,15 +536,26 @@ Responde SOLO con este JSON:
       userContent = [{type:'text',text:'Genera mi propuesta de valor y Factor WOW.'}];
     }
 
+    // Merge system prompt into first user message for proxy compatibility
+    const fullContent = Array.isArray(userContent) ? userContent : [{type:'text',text:userContent}];
+    const systemMsg = {type:'text', text: systemPrompt + '\n\n---\n'};
+    const mergedContent = [systemMsg, ...fullContent];
+
     const resp = await fetch('https://anthropicproxy-z4dcljw5oa-uc.a.run.app', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:1500, system:systemPrompt, messages:[{role:'user',content:userContent}]})
+      body: JSON.stringify({model:'claude-haiku-4-5', max_tokens:2000, messages:[{role:'user',content:mergedContent}]})
     });
 
     const data = await resp.json();
     const raw = data.content?.[0]?.text || '{}';
-    const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    let parsed;
+    try {
+      parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    } catch(parseErr) {
+      console.error('Parse error:', raw);
+      throw new Error('La IA no devolvió JSON válido: ' + raw.substring(0,200));
+    }
 
     if (!journeyData[stageId]) journeyData[stageId] = {};
     if (stage.questions) stage.questions.forEach(q => {
