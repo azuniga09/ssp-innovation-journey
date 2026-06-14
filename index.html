@@ -386,6 +386,110 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .btn-ssp-test .test-text { line-height: 1.2; }
 .btn-ssp-test .test-sub { font-size: .68rem; font-weight: 400; opacity: .8; display: block; }
 
+
+/* ── RESPONSIVE MOBILE ── */
+@media (max-width: 768px) {
+
+  /* Sidebar oculto en móvil */
+  .sidebar { display: none; }
+  .main { margin-left: 0; padding: 1rem; max-width: 100%; }
+
+  /* Topbar */
+  .topbar { padding: 0 1rem; }
+  .topbar-logo { font-size: 1.1rem; }
+  .user-name { display: none; }
+
+  /* Stage card */
+  .stage-card { padding: 1.25rem; border-radius: 12px; }
+  .stage-title { font-size: 1.4rem; }
+  .stage-prompt { font-size: .85rem; }
+
+  /* Fields */
+  .field-input { font-size: 1rem; padding: .9rem; }
+
+  /* Photo zone */
+  .photo-zone { padding: 1.5rem 1rem; }
+  .photo-placeholder .icon { font-size: 2rem; }
+
+  /* Buttons — más grandes para dedos */
+  .btn-ai { padding: 1rem; font-size: .95rem; min-height: 52px; }
+  .btn-nav { padding: .85rem 1.2rem; font-size: .9rem; min-height: 48px; }
+  .btn-save, .btn-confirm { min-height: 52px; }
+
+  /* Stage nav */
+  .stage-nav { gap: .5rem; }
+  .btn-prev, .btn-next { flex: 1; text-align: center; }
+
+  /* Historia stage — apilar verticalmente */
+  .historia-body {
+    grid-template-columns: 1fr;
+    gap: .75rem;
+  }
+  .historia-foto-zone {
+    flex-direction: row;
+    align-items: center;
+    gap: .75rem;
+  }
+  .historia-foto-upload {
+    width: 80px;
+    height: 105px;
+    flex-shrink: 0;
+  }
+  .historia-foto-label { text-align: left; }
+  .historia-texto textarea { min-height: 80px; font-size: .95rem; }
+  .historia-ejemplo { margin: .5rem .75rem; }
+  .historia-parte-header { padding: .85rem 1rem .6rem; }
+
+  /* Causal stage */
+  .causal-foto-preview { max-height: 220px; }
+  .causal-field { padding: 1rem; }
+
+  /* AI result */
+  .ai-result-text { font-size: .9rem; }
+
+  /* Segment options */
+  .segment-option { padding: .85rem; font-size: .85rem; }
+  .accionador-item { padding: .85rem; }
+
+  /* WOW cards */
+  .wow-card { padding: 1rem; }
+
+  /* Floating button — más compacto */
+  .btn-ssp-test {
+    bottom: 1rem;
+    left: 1rem;
+    padding: .6rem .9rem;
+    font-size: .75rem;
+  }
+  .btn-ssp-test .test-sub { display: none; }
+
+  /* Progress bar */
+  .progress-bar { margin-bottom: 1.25rem; }
+
+  /* Summary */
+  .summary-card { padding: 1.25rem; }
+  .summary-title { font-size: 1.5rem; }
+
+  /* Toast — arriba en móvil para no tapar botones */
+  .toast {
+    bottom: auto;
+    top: 70px;
+    right: 1rem;
+    left: 1rem;
+    text-align: center;
+  }
+
+  /* Juego cards grid */
+  .juego-cards-grid { grid-template-columns: repeat(4, 1fr); max-height: 220px; }
+}
+
+@media (max-width: 400px) {
+  .stage-title { font-size: 1.2rem; }
+  .historia-foto-upload { width: 70px; height: 90px; }
+  .juego-cards-grid { grid-template-columns: repeat(3, 1fr); }
+  .btn-ai { font-size: .88rem; }
+}
+
 </style>
 </head>
 <body>
