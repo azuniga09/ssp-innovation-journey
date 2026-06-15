@@ -268,10 +268,22 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <!-- APP -->
 <div id="app">
   <div class="topbar">
-    <div>
+    <div id="logo-click" onclick="logoClick()" style="cursor:default;">
       <span class="topbar-logo">Smart Serious Play<span>.</span></span>
       <span class="topbar-sub">Life is a Game</span>
     </div>
+    <script>
+    let logoClicks = 0, logoTimer;
+    function logoClick() {
+      logoClicks++;
+      clearTimeout(logoTimer);
+      logoTimer = setTimeout(() => logoClicks = 0, 1500);
+      if (logoClicks >= 3) {
+        logoClicks = 0;
+        window.open('https://azuniga09.github.io/ssp-innovation-journey/dashboard.html', '_blank');
+      }
+    }
+    </script>
     <div class="topbar-right">
       <span class="topbar-user" id="user-display"></span>
       <button class="btn-logout" id="btn-logout">Salir</button>
